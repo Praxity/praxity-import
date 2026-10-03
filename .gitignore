@@ -1,0 +1,13 @@
+# Local maintainer context written per machine.
+AGENTS.local.md
+
+node_modules/
+.DS_Store
+*.log
+
+# Real courses, fetched packages and generated imports stay local.
+corpus/local/
+out/
+
+# Agent worktrees.
+.claude/

@@ -1,0 +1,32 @@
+{
+	"name": "praxity-import",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Import SCORM packages from other authoring tools into Praxity Studio .prax courses",
+	"license": "SEE LICENSE IN LICENSE",
+	"author": "Ariel Harlap",
+	"bin": {
+		"praxity-import": "src/cli.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "node scripts/test.ts",
+		"corpus": "node scripts/fetch-corpus.ts",
+		"bench": "node scripts/bench.ts",
+		"verify": "pnpm typecheck && pnpm test"
+	},
+	"engines": {
+		"node": ">=24.18"
+	},
+	"packageManager": "pnpm@11.5.3",
+	"devDependencies": {
+		"@types/node": "^24.13.6",
+		"@types/yauzl": "^2.10.3",
+		"typescript": "^7.0.2"
+	},
+	"dependencies": {
+		"parse5": "8.0.1",
+		"yauzl": "^3.4.0"
+	}
+}

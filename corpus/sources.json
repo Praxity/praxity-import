@@ -1,0 +1,622 @@
+{
+	"note": "Public packages fetched for local testing only. Never commit their contents; licences are mostly unknown. `path` is relative to the clone.",
+	"sources": [
+		{
+			"id": "42-Degrees__phages-index-assets",
+			"tool": "storyline",
+			"git": "https://github.com/42-Degrees/phages-index-assets.git",
+			"commit": "ec509ab6b74adbe05d0be6b3cb9a21aa526178ab",
+			"clone": "42-Degrees__phages-index-assets",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "Coursera-Learning-Programs__microsoft-developer-control-structures",
+			"tool": "storyline",
+			"git": "https://github.com/Coursera-Learning-Programs/microsoft-developer-control-structures.git",
+			"commit": "4a9f9b740091c510111bb3e79501bc502a710854",
+			"clone": "Coursera-Learning-Programs__microsoft-developer-control-structures",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "GriffithUniLibrary__publishing-maze",
+			"tool": "rise",
+			"git": "https://github.com/GriffithUniLibrary/publishing-maze.git",
+			"commit": "e666a92823916130e9dcfc61bdf31d9574b83a75",
+			"clone": "GriffithUniLibrary__publishing-maze",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "KassSTEM__instructional-design",
+			"tool": "rise",
+			"git": "https://github.com/KassSTEM/instructional-design.git",
+			"commit": "efe2f1710e94f1730d3e9ddf88b6897bad2113bc",
+			"clone": "KassSTEM__instructional-design",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "Maestra-Pacheco__Articulate-Storyline",
+			"tool": "storyline",
+			"git": "https://github.com/Maestra-Pacheco/Articulate-Storyline.git",
+			"commit": "38c2404e9a5f1b10ff517cdd736b8a2fdf2bf64f",
+			"clone": "Maestra-Pacheco__Articulate-Storyline",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "Rishitabhargavi__employee-onboarding-programme",
+			"tool": "rise",
+			"git": "https://github.com/Rishitabhargavi/employee-onboarding-programme.git",
+			"commit": "3860046b20b3e93aeee05aaa8c87ef05dc9901fd",
+			"clone": "Rishitabhargavi__employee-onboarding-programme",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "SuperTJ10__4D-Version-0.3",
+			"tool": "storyline",
+			"git": "https://github.com/SuperTJ10/4D-Version-0.3.git",
+			"commit": "65da6b070f3d256acc315fe55f6b043d6147d71c",
+			"clone": "SuperTJ10__4D-Version-0.3",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "UWLSimulationCentre__eMORA",
+			"tool": "rise",
+			"git": "https://github.com/UWLSimulationCentre/eMORA.git",
+			"commit": "3f58aec999f08d7dee6cd91d6555699ac4fc5d17",
+			"clone": "UWLSimulationCentre__eMORA",
+			"path": "",
+			"licence": "MIT"
+		},
+		{
+			"id": "VitorDeSenna__Archery-Game",
+			"tool": "storyline",
+			"git": "https://github.com/VitorDeSenna/Archery-Game.git",
+			"commit": "85629a2405bf6517beb92b1f3074421337f03a67",
+			"clone": "VitorDeSenna__Archery-Game",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "VitorDeSenna__escapeRoomTraining",
+			"tool": "storyline",
+			"git": "https://github.com/VitorDeSenna/escapeRoomTraining.git",
+			"commit": "01798e580fd3d55689f530bc2916c93434799d30",
+			"clone": "VitorDeSenna__escapeRoomTraining",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "bdee1__Rise-360-Course",
+			"tool": "rise",
+			"git": "https://github.com/bdee1/Rise-360-Course.git",
+			"commit": "cf9a75ff23d1a87fabd148336591790e26e9ff1c",
+			"clone": "bdee1__Rise-360-Course",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "dimeji-code__Food-Quality-Assurance",
+			"tool": "storyline",
+			"git": "https://github.com/dimeji-code/Food-Quality-Assurance.git",
+			"commit": "a2b7d3ea1472f8e9a8bd0566b10d587511593a4b",
+			"clone": "dimeji-code__Food-Quality-Assurance",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "emilyashman16-sudo__captivate-SCORM-Tin-Can-and-xAPI",
+			"tool": "captivate",
+			"git": "https://github.com/emilyashman16-sudo/captivate-SCORM-Tin-Can-and-xAPI.git",
+			"commit": "b37d6053c1ebf41bc568bfbe292c1fe777208133",
+			"clone": "emilyashman16-sudo__captivate-SCORM-Tin-Can-and-xAPI",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "gshihan__my-rise360-course",
+			"tool": "rise",
+			"git": "https://github.com/gshihan/my-rise360-course.git",
+			"commit": "9dbf736772932e0627c2d82413e8ae52acd4211b",
+			"clone": "gshihan__my-rise360-course",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "himabindumore__Rise-360-course",
+			"tool": "rise",
+			"git": "https://github.com/himabindumore/Rise-360-course.git",
+			"commit": "b2262af529e8b7110fec075017718e31fc18e8f0",
+			"clone": "himabindumore__Rise-360-course",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "ksreiss__kreiss_captivate_elearning",
+			"tool": "captivate",
+			"git": "https://github.com/ksreiss/kreiss_captivate_elearning.git",
+			"commit": "62a68c0ba41034585a086eab0a79f1f7fa039b1f",
+			"clone": "ksreiss__kreiss_captivate_elearning",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "lakaylalt__content",
+			"tool": "rise",
+			"git": "https://github.com/lakaylalt/content.git",
+			"commit": "a755cd6df0f3c85ffa6fc5050efed57c16c39d60",
+			"clone": "lakaylalt__content",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "souperstition__Memory-Game-Storyline",
+			"tool": "storyline",
+			"git": "https://github.com/souperstition/Memory-Game-Storyline.git",
+			"commit": "9d17feab532b96fa95e797aedb39d2c716b82c13",
+			"clone": "souperstition__Memory-Game-Storyline",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "claymorenjoyer__internet_addressing_articulate_sl__Understanding_Internet_Addressing_SCORM",
+			"tool": "storyline",
+			"git": "https://github.com/claymorenjoyer/internet_addressing_articulate_sl.git",
+			"commit": "c6e7bca98a4b046a75910e43aeb8db20b951df34",
+			"clone": "claymorenjoyer__internet_addressing_articulate_sl",
+			"path": "Understanding_Internet_Addressing_SCORM",
+			"licence": "unknown"
+		},
+		{
+			"id": "kc0bfv__SCORMToIMSCC__scorm_example_ETM3240_Mod1_Summ_SL_v1.0.0_09-04-25",
+			"tool": "storyline",
+			"git": "https://github.com/kc0bfv/SCORMToIMSCC.git",
+			"commit": "c583a3ca0d777ae51b5d4289747b6ef5041b42df",
+			"clone": "kc0bfv__SCORMToIMSCC",
+			"path": "scorm_example/ETM3240_Mod1_Summ_SL_v1.0.0_09-04-25",
+			"licence": "unknown"
+		},
+		{
+			"id": "kc0bfv__SCORMToIMSCC__scorm_example_ENG1160_Mod1_SL_v1.0.1_02-23-26.zip",
+			"tool": "storyline",
+			"git": "https://github.com/kc0bfv/SCORMToIMSCC.git",
+			"commit": "c583a3ca0d777ae51b5d4289747b6ef5041b42df",
+			"clone": "kc0bfv__SCORMToIMSCC",
+			"path": "scorm_example/ENG1160_Mod1_SL_v1.0.1_02-23-26.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "perfectstrong__CPCluster-example__sample_Example1",
+			"tool": "captivate",
+			"git": "https://github.com/perfectstrong/CPCluster-example.git",
+			"commit": "d3c50bf3aff4da4ca605e70aa12d4d3b61e5a7e2",
+			"clone": "perfectstrong__CPCluster-example",
+			"path": "sample/Example1",
+			"licence": "unknown"
+		},
+		{
+			"id": "perfectstrong__CPCluster-example__sample_Example2",
+			"tool": "captivate",
+			"git": "https://github.com/perfectstrong/CPCluster-example.git",
+			"commit": "d3c50bf3aff4da4ca605e70aa12d4d3b61e5a7e2",
+			"clone": "perfectstrong__CPCluster-example",
+			"path": "sample/Example2",
+			"licence": "unknown"
+		},
+		{
+			"id": "xapicohort__team-captivate-jslibrary__superwrapperScormv1",
+			"tool": "captivate",
+			"git": "https://github.com/xapicohort/team-captivate-jslibrary.git",
+			"commit": "e5749eccd6c04da22b41d80af5f04a2ddd562d75",
+			"clone": "xapicohort__team-captivate-jslibrary",
+			"path": "superwrapperScormv1",
+			"licence": "unknown"
+		},
+		{
+			"id": "xapicohort__team-captivate-jslibrary__conCallDemo",
+			"tool": "captivate",
+			"git": "https://github.com/xapicohort/team-captivate-jslibrary.git",
+			"commit": "e5749eccd6c04da22b41d80af5f04a2ddd562d75",
+			"clone": "xapicohort__team-captivate-jslibrary",
+			"path": "conCallDemo",
+			"licence": "unknown"
+		},
+		{
+			"id": "xapicohort__team-captivate-jslibrary__spring2020",
+			"tool": "captivate",
+			"git": "https://github.com/xapicohort/team-captivate-jslibrary.git",
+			"commit": "e5749eccd6c04da22b41d80af5f04a2ddd562d75",
+			"clone": "xapicohort__team-captivate-jslibrary",
+			"path": "spring2020",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__CAHE",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "CAHE",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__CI",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "CI",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__ETRA",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "ETRA",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__KNPE",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "KNPE",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__LEPF",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "LEPF",
+			"licence": "unknown"
+		},
+		{
+			"id": "idsharif__coetourdemo__SEED",
+			"tool": "captivate",
+			"git": "https://github.com/idsharif/coetourdemo.git",
+			"commit": "cd44e0a8eb30c14016f8bacadbfc3d2b683bf7e3",
+			"clone": "idsharif__coetourdemo",
+			"path": "SEED",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Articulate-Storyline-360-Quiz-SCORM-1.2-Pass-or-Failed",
+			"tool": "storyline",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Articulate-Storyline-360-Quiz-SCORM-1.2-Pass-or-Failed.zip",
+			"sha256": "28e6e12e61abdee50074be4ff18161202128e5e62b0c6dae84d1fe630b940ed4",
+			"file": "Articulate-Storyline-360-Quiz-SCORM-1.2-Pass-or-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Articulate-Storyline-360-Quiz-SCORM-2004-2nd-Passed-or-Failed",
+			"tool": "storyline",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Articulate-Storyline-360-Quiz-SCORM-2004-2nd-Passed-or-Failed.zip",
+			"sha256": "6fda398621b53a998d964d350c4075a7d6046402c367c46d353af4b53b1d72ca",
+			"file": "Articulate-Storyline-360-Quiz-SCORM-2004-2nd-Passed-or-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Articulate-Storyline-360-Quiz-SCORM-2004-3rd-Passed-or-Failed",
+			"tool": "storyline",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Articulate-Storyline-360-Quiz-SCORM-2004-3rd-Passed-or-Failed.zip",
+			"sha256": "7594d4ab8b45c042446137929f8339b8703eb9fac0c17ae797a236aa85714120",
+			"file": "Articulate-Storyline-360-Quiz-SCORM-2004-3rd-Passed-or-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Articulate-Storyline-360-Quiz-SCORM-2004-4th-Passed-or-Failed",
+			"tool": "storyline",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Articulate-Storyline-360-Quiz-SCORM-2004-4th-Passed-or-Failed.zip",
+			"sha256": "2cbbce58a2a0a24a4d809bf26365c6dd896fbb1aa7122c7b95f65db4fac0faa7",
+			"file": "Articulate-Storyline-360-Quiz-SCORM-2004-4th-Passed-or-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Demo-Captivate-Quiz-SCORM-1.2",
+			"tool": "captivate",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Demo-Captivate-Quiz-SCORM-1.2.zip",
+			"sha256": "9228b107a5c2d09bb22495306319520e037bfe49953a85d997fd530b5ae44354",
+			"file": "Demo-Captivate-Quiz-SCORM-1.2.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__DominKnow_Mobile_Amphibians_TinCan_20130211_1113",
+			"tool": "dominknow",
+			"zip": "https://www.nextsoftwaresolutions.com/demo/DominKnow_Mobile_Amphibians_TinCan_20130211_1113.zip",
+			"sha256": "276d0c3492741bee6d6d3c9fb4d91ec4d1f57664b5e8685f7e1a186706eb5dbf",
+			"file": "DominKnow_Mobile_Amphibians_TinCan_20130211_1113.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Lectora_SCORM_2004_Quiz_80_Pass",
+			"tool": "lectora",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2024/05/Lectora_SCORM_2004_Quiz_80_Pass.zip",
+			"sha256": "69a4595e002c17b5ce2d69fa71fe9e586d38078e47278cef1748d06f836da7c3",
+			"file": "Lectora_SCORM_2004_Quiz_80_Pass.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Rise-Course-SCORM-2004-2nd-Edition-Passed-Failed",
+			"tool": "rise",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Rise-Course-SCORM-2004-2nd-Edition-Passed-Failed.zip",
+			"sha256": "dc769dac1b6eb3f355f2e8a70b249a64d45624834f6bfeff58ed56cc1789f015",
+			"file": "Rise-Course-SCORM-2004-2nd-Edition-Passed-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Rise-Course-SCORM-2004-4th-Edition-Passed-Failed",
+			"tool": "rise",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Rise-Course-SCORM-2004-4th-Edition-Passed-Failed.zip",
+			"sha256": "d10e57b256f917e6dc35f34423aa4f195971db911fb308c76288cb0f6a15b65a",
+			"file": "Rise-Course-SCORM-2004-4th-Edition-Passed-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__Rise-Quiz-SCORM-1.2-Passed-Failed",
+			"tool": "rise",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/Rise-Quiz-SCORM-1.2-Passed-Failed.zip",
+			"sha256": "38782d5e4392aaa089bbac88a17bf09e363a6142d2b6775d9ebe1bd4c38588d5",
+			"file": "Rise-Quiz-SCORM-1.2-Passed-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__cognitive-processing-scorm12-paZKbzn_",
+			"tool": "rise",
+			"zip": "https://www.taliyahholder.com/s/cognitive-processing-scorm12-paZKbzn_.zip",
+			"sha256": "e217c853fe50fad02d131f2059c48c633ca97747eccfa3008e055ece21b0fa5f",
+			"file": "cognitive-processing-scorm12-paZKbzn_.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__iSpring-10-SCORM-1.2-Passed-and-Failed",
+			"tool": "ispring",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/iSpring-10-SCORM-1.2-Passed-and-Failed.zip",
+			"sha256": "d91f028a5bb19cadebc01f22e984502f6928bda9acf5c9f6a54231c1389f2c9f",
+			"file": "iSpring-10-SCORM-1.2-Passed-and-Failed.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__iSpring-10-SCORM-2004-2nd-Edition",
+			"tool": "ispring",
+			"zip": "https://www.nextsoftwaresolutions.com/wp-content/uploads/2021/06/iSpring-10-SCORM-2004-2nd-Edition.zip",
+			"sha256": "a811c58fcf31063cb2b28f872f33c8aeb5baf304fde6d14d5bc8e241bb8afaeb",
+			"file": "iSpring-10-SCORM-2004-2nd-Edition.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__kallidus-sample-1",
+			"tool": "rise",
+			"zip": "https://kallidus.zendesk.com/hc/en-us/article_attachments/42879403149585",
+			"sha256": "07f45632988ffeb0043eb328755118ea854730ffa594c706b77379e5b373c535",
+			"file": "kallidus-sample-1.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__kallidus-sample-2",
+			"tool": "rise",
+			"zip": "https://kallidus.zendesk.com/hc/en-us/article_attachments/42879403155217",
+			"sha256": "3bcd93f368b0c4d1c19d5efaf8927fb391ed4988a0769306a9d8ce2ec3679305",
+			"file": "kallidus-sample-2.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__learning-theories-sorting-scorm12-fFWi5PaG",
+			"tool": "rise",
+			"zip": "https://www.taliyahholder.com/s/learning-theories-sorting-scorm12-fFWi5PaG.zip",
+			"sha256": "bc02fae8c709661932d3eb4537b66694a3c60892c710d8526daba0539582688d",
+			"file": "learning-theories-sorting-scorm12-fFWi5PaG.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "zip__top-tips-for-staff-welsh-scorm-v1",
+			"tool": "rise",
+			"zip": "https://www.ncsc.gov.uk/sites/default/files/documents/top-tips-for-staff-welsh-scorm-v1.zip",
+			"sha256": "6724a8276d779c714235e0b60cbdcdf3e33a5327027622cce09127fd5116ed04",
+			"file": "top-tips-for-staff-welsh-scorm-v1.zip",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__en",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/en",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__en_module1",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/en/module1",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__en_module2",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/en/module2",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__en_module3",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/en/module3",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__en_module4",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/en/module4",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__fr_module5",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/fr/module5",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__de_module10",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/de/module10",
+			"licence": "unknown"
+		},
+		{
+			"id": "euelearning__es_module16",
+			"tool": "adapt",
+			"git": "https://gitlab.com/european-data-portal/euelearning.git",
+			"commit": "83ab45e4f7b204b06c62d764b9c9572a5d7f459b",
+			"clone": "gitlab__euelearning",
+			"path": "code/es/module16",
+			"licence": "unknown"
+		},
+		{
+			"id": "skfriese__lms-diag",
+			"tool": "html",
+			"git": "https://github.com/skfriese/lms-diag.git",
+			"commit": "ef1e0710022d769a9eeb31fb88f55583035e5aae",
+			"clone": "skfriese__lms-diag",
+			"path": "",
+			"licence": "MIT"
+		},
+		{
+			"id": "elgaspar__scorm-example",
+			"tool": "html",
+			"git": "https://github.com/elgaspar/scorm-example.git",
+			"commit": "b394c139e532027aa0b21997783b23b469a6253f",
+			"clone": "elgaspar__scorm-example",
+			"path": "",
+			"licence": "MIT"
+		},
+		{
+			"id": "zip3__Secure_code_development_scorm",
+			"tool": "html",
+			"zip": "https://github.com/RichardoC/secure-code-training/releases/download/0.0.9/Secure_code_development_scorm.zip",
+			"sha256": "bb1ec5773adf6085c4520927a0038ed4f8515c9e91e280d61e2409c44cb5bf71",
+			"file": "Secure_code_development_scorm.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "zip3__scorm-unidad-formativa-01",
+			"tool": "html",
+			"zip": "https://github.com/datosgobes/unidad-formativa-01/releases/download/latest/scorm-unidad-formativa-01.zip",
+			"sha256": "53c412254b1ccd95b1eefcbb4c07cbc6ab4936a5e2a58f8c97ce0f9b921872de",
+			"file": "scorm-unidad-formativa-01.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "zip3__scorm-unidad-formativa-02",
+			"tool": "html",
+			"zip": "https://github.com/datosgobes/unidad-formativa-02/releases/download/latest/scorm-unidad-formativa-02.zip",
+			"sha256": "28a9d02786c08d22cc2f87f0e346a26cd7081b87a2e5dd9980078c317dece575",
+			"file": "scorm-unidad-formativa-02.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "zip3__scorm-unidad-formativa-06",
+			"tool": "html",
+			"zip": "https://github.com/datosgobes/unidad-formativa-06/releases/download/latest/scorm-unidad-formativa-06.zip",
+			"sha256": "d8c980f5dd06c3e80341daab582dd87b03401109565b0b6f0355d9d50db426b8",
+			"file": "scorm-unidad-formativa-06.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "zip3__scorm-ejemplo",
+			"tool": "html",
+			"zip": "https://raw.githubusercontent.com/openworksheets/openworksheets.github.io/main/ejemplos/scorm-ejemplo.zip",
+			"sha256": "ffcebcddaccbb89bf16cfe5809814380b1a7a5015f03d7ce18d17e3bb5cfcc6f",
+			"file": "scorm-ejemplo.zip",
+			"licence": "AGPL-3.0"
+		},
+		{
+			"id": "VitorDeSenna__Crack-the-safe-The-Game",
+			"tool": "storyline",
+			"git": "https://github.com/VitorDeSenna/Crack-the-safe-The-Game.git",
+			"commit": "9f2fd03367113b556590b055fff6fa080adc603e",
+			"clone": "VitorDeSenna__Crack-the-safe-The-Game",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "masdimaseka__MPI-JenisPowerTools",
+			"tool": "storyline",
+			"git": "https://github.com/masdimaseka/MPI-JenisPowerTools.git",
+			"commit": "6351a1b673ad5b55b0d060bc1630e5c3a60bd536",
+			"clone": "masdimaseka__MPI-JenisPowerTools",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "Joericazou__prompt-surgery",
+			"tool": "storyline",
+			"git": "https://github.com/Joericazou/prompt-surgery.git",
+			"commit": "ab8f7ea1ecf809c45ec52baf414d2e4483727f1c",
+			"clone": "Joericazou__prompt-surgery",
+			"path": "",
+			"licence": "unknown"
+		},
+		{
+			"id": "ispringsolutions__Player-SDK__html-samples_presentation",
+			"tool": "ispring",
+			"git": "https://github.com/ispringsolutions/Player-SDK.git",
+			"commit": "6c2b5539e56ff15689ea37d92667ff25e625f25b",
+			"clone": "ispringsolutions__Player-SDK",
+			"path": "html-samples/presentation",
+			"licence": "unknown"
+		},
+		{
+			"id": "exe__B00-Presentacion-2021-03-27",
+			"tool": "html",
+			"zip": "https://cloud.aulatraining.com/s/REC5MQCwDPWcjwS/download",
+			"sha256": "f00a1b942f8c6712691670c28d683d484a113bb4fabb594c3db4ee45981aef1c",
+			"member": "SCORMs/Base/B00-Presentacion-2021-03-27.zip",
+			"file": "B00-Presentacion-2021-03-27.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "exe__B03-Tipos-de-datos-y-edicion-de-tablas-2021-03-27",
+			"tool": "html",
+			"zip": "https://cloud.aulatraining.com/s/REC5MQCwDPWcjwS/download",
+			"sha256": "f00a1b942f8c6712691670c28d683d484a113bb4fabb594c3db4ee45981aef1c",
+			"member": "SCORMs/Base/B03-Tipos-de-datos-y-edicion-de-tablas-2021-03-27.zip",
+			"file": "B03-Tipos-de-datos-y-edicion-de-tablas-2021-03-27.zip",
+			"licence": "CC BY-SA 4.0"
+		},
+		{
+			"id": "exe__B07-Formularios-basicos-2021-03-27",
+			"tool": "html",
+			"zip": "https://cloud.aulatraining.com/s/REC5MQCwDPWcjwS/download",
+			"sha256": "f00a1b942f8c6712691670c28d683d484a113bb4fabb594c3db4ee45981aef1c",
+			"member": "SCORMs/Base/B07-Formularios-basicos-2021-03-27.zip",
+			"file": "B07-Formularios-basicos-2021-03-27.zip",
+			"licence": "CC BY-SA 4.0"
+		}
+	]
+}
