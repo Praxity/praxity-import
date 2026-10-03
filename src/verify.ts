@@ -84,10 +84,11 @@ export type Verification = {
 };
 
 export async function verify(project: string, sourceText: string[]): Promise<Verification> {
-	// Studio before 0.2.0 has no `inspect` and would open the desktop app instead.
+	// Studio before 0.2.0 has no `inspect` and would open the desktop app instead;
+	// 0.2.0 shows the writer's backslash escapes and dropdown/word-bank blanks as literal text.
 	const version = (await studio(["--version"])).stdout.trim();
 	const [major = 0, minor = 0] = version.split(".").map(Number);
-	if (major === 0 && minor < 2) return { parse: { ok: false, error: `Studio CLI ${version || "(unknown version)"} has no inspect command; 0.2.0 or later is required. Set PRAXITY_CLI.` } };
+	if (major === 0 && minor < 3) return { parse: { ok: false, error: `Studio CLI ${version || "(unknown version)"} cannot read inline escapes or dropdown and word-bank blanks; 0.3.0 or later is required. Set PRAXITY_CLI.` } };
 	const inspected = await studio(["inspect", project]);
 	let parsed: { ok?: boolean; studioVersion?: string; lessons?: Array<{ pages?: Array<{ blocks?: Array<{ type: string }> }> }>; error?: { message?: string } };
 	try {

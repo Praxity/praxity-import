@@ -30,10 +30,10 @@ praxity-import <package.zip|unzipped-dir> --output <new-course-dir> --verify
   for Studio's CLI in `PRAXITY_CLI` (the `praxity` launcher or `praxity.mjs`),
   then `praxity` on PATH, then the macOS app. If it finds no CLI, the import
   fails with `import_failed`, exits 1 and writes nothing. With a Studio older
-  than 0.2.0, the importer writes the course but reports `"ok": false` and
+  than 0.3.0, the importer writes the course but reports `"ok": false` and
   exits 1. Leave `--verify` off to import without the check.
 - Output uses Studio's backslash escapes and fill-blank `dropdown` and
-  `word-bank` styles, which Studio added after 0.2.0. Studio 0.2.0 shows the
+  `word-bank` styles, which need Studio 0.3.0. Studio 0.2.0 shows the
   backslashes literally and treats those blanks as typed answers.
 
 stdout is one JSON object:
