@@ -8,7 +8,7 @@ Import converts SCORM packages and web exports from other authoring tools
 (Articulate Rise and Storyline, Adobe Captivate, iSpring Suite, Lectora, Adapt,
 LiaScript, Xerte, static HTML) into Praxity Studio course folders: `course.yaml`,
 `.prax` lessons and `assets/`. Its sibling tools are Check (accessibility) and
-Trace (design diagnostics). The repository is private for now.
+Trace (design diagnostics).
 
 ## Design rules
 
@@ -25,11 +25,11 @@ Trace (design diagnostics). The repository is private for now.
   (`src/model.ts`) → `writeProject`. Only extractors contain tool-specific
   code. Only the writer emits `.prax` syntax.
 - **Studio judges validity.** `--verify` runs `praxity inspect` and
-  `praxity export` from Studio 0.2.0+ (`PRAXITY_CLI`), and measures word
+  `praxity export` from Studio 0.3.0+ (`PRAXITY_CLI`), and measures word
   coverage against the extractor's independent `sourceText` inventory. Output
   targets Studio grammar v3, including inline escapes and the fill-blank
-  `dropdown`/`word-bank` styles added after Studio 0.2.0. Verify with a Studio
-  CLI that supports them. Keep Studio source out of this repository.
+  `dropdown`/`word-bank` styles that Studio 0.3.0 added. Keep Studio source
+  out of this repository.
 - **Packages are untrusted.** Never evaluate their JavaScript (`vm`, `eval`,
   `Function`). Parse it with `src/jslit.ts`. When a file path comes from
   package data or a directory listing, open the file through `insidePackage`

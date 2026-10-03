@@ -12,7 +12,7 @@ pnpm install
 node src/cli.ts path/to/course.zip --output my-course --verify
 ```
 
-`--verify` needs Studio 0.2.0 or later: set `PRAXITY_CLI` to Studio's
+`--verify` needs Studio 0.3.0 or later: set `PRAXITY_CLI` to Studio's
 `praxity` launcher or standalone `praxity.mjs`.
 
 - Agents and scripts: [skill/SKILL.md](skill/SKILL.md) documents the CLI
