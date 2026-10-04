@@ -12,8 +12,19 @@ pnpm install
 node src/cli.ts path/to/course.zip --output my-course --verify
 ```
 
-`--verify` needs Studio 0.3.0 or later: set `PRAXITY_CLI` to Studio's
-`praxity` launcher or standalone `praxity.mjs`.
+`--verify` needs the Studio 0.3.0 CLI or later. Download
+`praxity-cli-0.3.0-macos-arm64.tar.gz` (Apple Silicon) or
+`praxity-cli-0.3.0-macos-x64.tar.gz` (Intel) from the
+[Studio 0.3.0 release](https://github.com/Praxity/desktop/releases/tag/v0.3.0),
+unpack it and set `PRAXITY_CLI` to `studio-cli/praxity.mjs`:
+
+```sh
+tar -xzf praxity-cli-0.3.0-macos-arm64.tar.gz
+export PRAXITY_CLI="$PWD/studio-cli/praxity.mjs"
+```
+
+Studio publishes the CLI for macOS only, so `--verify` does not support
+Windows yet. Importing without `--verify` works on any platform.
 
 - Agents and scripts: [skill/SKILL.md](skill/SKILL.md) documents the CLI
   contract and how to review an import.
