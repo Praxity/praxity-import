@@ -1,6 +1,6 @@
 # Third-party notices
 
-Praxity Import installs these runtime dependencies through the package manager. Their licence texts, copied from the installed packages, follow. Versions are those in `pnpm-lock.yaml` at release.
+Praxity Import bundles these runtime dependencies in portable packages and installs them through the package manager in source checkouts. Their licence texts, copied from the installed packages, follow. Versions are those in `pnpm-lock.yaml` at release.
 
 ## parse5 8.0.1 (MIT)
 

@@ -10,6 +10,7 @@
 		"praxity-import": "src/cli.ts"
 	},
 	"scripts": {
+		"package": "node scripts/package.mjs",
 		"typecheck": "tsc --noEmit",
 		"test": "node scripts/test.ts",
 		"corpus": "node scripts/fetch-corpus.ts",

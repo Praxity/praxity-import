@@ -42,6 +42,29 @@ Windows yet. Importing without `--verify` works on any platform.
 
 Requires Node 24.18+.
 
+## Portable package
+
+From a clean, committed checkout with dependencies installed:
+
+```sh
+pnpm package --output /path/to/new/praxity-import-0.1.0
+node /path/to/new/praxity-import-0.1.0/src/cli.ts --help
+node /path/to/new/praxity-import-0.1.0/src/cli.ts /path/to/course.zip --output my-course
+```
+
+The new directory contains runtime TypeScript, production dependencies,
+licences and notices, the agent skill and its linked references, and a tiny
+synthetic SCORM fixture at `fixtures/smoke/scorm`. It needs only Node 24.18+
+to import, without a package manager or network. `--verify` and
+`--convert-media` still need their external tools.
+
+`inventory.json` records the committed revision, dependency versions and each
+payload file's SHA-256, size and mode. It excludes itself from its hash list.
+Packaging refuses dirty trees, existing outputs, unsafe references, unaudited
+dependencies, binary files and machine paths. Text uses LF; launchers use mode
+0755. Archive the directory under `praxity-import-0.1.0/` and extract with
+`stripComponents: 1`. The same archive supports every platform with Node 24.
+
 ## Related work
 
 Other projects read parts of the same published formats.
