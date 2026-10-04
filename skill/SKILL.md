@@ -28,7 +28,11 @@ praxity-import <package.zip|unzipped-dir> --output <new-course-dir> --verify
   Off by default.
 - `--verify` parses the result with Studio and tries an HTML export. It looks
   for Studio's CLI in `PRAXITY_CLI` (the `praxity` launcher or `praxity.mjs`),
-  then `praxity` on PATH, then the macOS app. If it finds no CLI, the import
+  then `praxity` on PATH, then the macOS app. The Studio 0.3.0 release
+  (<https://github.com/Praxity/desktop/releases/tag/v0.3.0>) has the CLI as
+  `praxity-cli-0.3.0-macos-arm64.tar.gz` and `-x64.tar.gz`; unpack one and set
+  `PRAXITY_CLI` to `studio-cli/praxity.mjs`. It ships for macOS only, so
+  `--verify` does not support Windows yet. If it finds no CLI, the import
   fails with `import_failed`, exits 1 and writes nothing. With a Studio older
   than 0.3.0, the importer writes the course but reports `"ok": false` and
   exits 1. Leave `--verify` off to import without the check.
