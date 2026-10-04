@@ -44,7 +44,8 @@ authors publish from them, for interoperability.
 
 ## Runtime dependencies
 
-Dependencies are installed by the package manager and retain their own terms.
+Dependencies retain their own terms. Portable packages bundle their runtime
+files and licences; source checkouts install them with the package manager.
 Full licence texts are in `THIRD-PARTY-NOTICES.md`.
 
 - `parse5` 8.0.1 — MIT; Copyright (c) 2013-2019 Ivan Nikulin.
