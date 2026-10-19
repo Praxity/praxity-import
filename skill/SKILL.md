@@ -9,8 +9,13 @@ Praxity Import converts a course package from another authoring tool into a
 Studio course folder you can open, edit and re-export. The import is deterministic: the same
 package always gives byte-identical output, so a re-import diffs cleanly.
 
-Through Rubato, run `praxity import <package> --output <dir> --verify`. A
-standalone install runs `praxity-import`, as in the examples below.
+Import targets the frozen Studio 0.3.0 CLI. It writes grammar-3 lessons,
+which current Studio, Rubato's Studio and the prax-format skill don't read,
+and this pack has no converter. Edit, verify and export imported courses
+with Studio 0.3.0.
+
+Through Rubato, run `praxity import <package> --output <dir>`. A standalone
+install runs `praxity-import`, as in the examples below.
 
 ## Run it
 
@@ -29,12 +34,15 @@ praxity-import <package.zip|unzipped-dir> --output <new-course-dir> --verify
   A given ffmpeg version always produces byte-identical files. The importer
   refuses playlists that name remote addresses or files outside the package.
   Off by default.
-- `--verify` parses the result with Studio, then records identity and tries
-  an HTML export on a scratch copy. Through Rubato it finds Studio itself.
-  Standalone, it uses `PRAXITY_CLI` (Studio's `praxity` launcher or
-  `praxity.mjs`), then `praxity` on PATH. If it finds no CLI, the import
-  fails with `import_failed`, exits 1 and writes nothing. Leave `--verify`
-  off to import without the check.
+- `--verify` parses the result with the Studio 0.3.0 CLI and tries an HTML
+  export. Set `PRAXITY_CLI` to `studio-cli/praxity.mjs` from
+  `praxity-cli-0.3.0-macos-arm64.tar.gz` or `-x64.tar.gz` on the
+  [Studio 0.3.0 release](https://github.com/Praxity/desktop/releases/tag/v0.3.0);
+  without it, the importer tries `praxity` on PATH. Through Rubato,
+  `praxity import` points `PRAXITY_CLI` at current Studio, which refuses
+  grammar 3, so leave `--verify` off there and verify with the standalone
+  importer. The CLI ships for macOS only. If the importer finds no CLI, the
+  import fails with `import_failed`, exits 1 and writes nothing.
 
 stdout is one JSON object:
 
@@ -86,9 +94,9 @@ course-dir/
      script-generated quiz, a missing file).
    - `approximated`: content kept, behaviour changed (a branching scenario
      became a sequence; an image without alt text was marked decorative).
-3. Make fixes in the `.prax` files with the prax-format skill. A re-import
-   with `--force` overwrites edits. Before opening or exporting the course,
-   run the prax-format skill's identity step.
+3. Make fixes in the grammar-3 `.prax` files with Studio 0.3.0; the
+   prax-format skill covers grammar 4 only. A re-import with `--force`
+   overwrites edits.
 4. Images marked decorative because the source had no alt text need a human
    decision. Search the report for "no alternative text".
 5. `media:video` and `media:audio` losses are files Studio cannot play (HLS
