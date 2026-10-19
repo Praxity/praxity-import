@@ -76,7 +76,8 @@ test("package contains only portable runtime files, complete notices and exact i
 	assert.equal(inventory.entry, "src/cli.ts");
 	assert.deepEqual(inventory.dependencies.map((pkg: { name: string; version: string }) => `${pkg.name}@${pkg.version}`).sort(), ["entities@8.1.0", "parse5@8.0.1", "pend@1.2.0", "yauzl@3.4.0"]);
 	assert.ok(files.includes("skill/SKILL.md"));
-	assert.ok(files.includes("docs/adr/0002-layout-from-recorded-geometry.md"));
+	// Rubato installs skill/ alone, so the skill cites docs by public URL and ships none.
+	assert.equal(files.some((file) => file.startsWith("docs/")), false);
 	for (const path of ["LICENSE", "LICENSING.md", "NOTICE.md", "THIRD-PARTY-NOTICES.md"]) assert.ok(inventory.legalFiles.includes(path));
 	assert.equal(files.some((file) => /(?:^|\/)(?:test|tests|corpus|out|scripts|dev-only|\.git)(?:\/|$)|\.(?:map|d\.ts|test\.ts|node|exe|dll|wasm)$/.test(file)), false);
 	for (const file of inventory.files) {
