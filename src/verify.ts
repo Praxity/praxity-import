@@ -105,11 +105,15 @@ export async function verify(project: string, sourceText: string[]): Promise<Ver
 		coverage: coverage(sourceText, strings(parsed, [])),
 	};
 
-	// Export writes identity sidecars into the project, so it runs on a copy.
+	// Studio's CLI export refuses a course whose identity was never recorded, and
+	// recording it writes .praxity/, so both run on a copy. A failed or unknown
+	// `identity init` (Studio before it existed) leaves export to report the problem.
 	const scratch = await mkdtemp(join(tmpdir(), "praxity-import-verify-"));
 	try {
-		await cp(project, join(scratch, "course"), { recursive: true });
-		const exported = await studio(["export", join(scratch, "course"), "--format", "html", "--output", join(scratch, "out.zip"), "--allow-critical-a11y-issues"]);
+		const course = join(scratch, "course");
+		await cp(project, course, { recursive: true });
+		await studio(["identity", "init", course]);
+		const exported = await studio(["export", course, "--format", "html", "--output", join(scratch, "out.zip"), "--allow-critical-a11y-issues"]);
 		try {
 			const r = JSON.parse(exported.stdout) as { ok: boolean; accessibility?: { status?: string; criticalCount?: number; issues?: unknown[] }; error?: { message?: string } };
 			result.export = r.ok
