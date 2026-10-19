@@ -9,6 +9,9 @@ Praxity Import converts a course package from another authoring tool into a
 Studio course folder you can open, edit and re-export. The import is deterministic: the same
 package always gives byte-identical output, so a re-import diffs cleanly.
 
+Through Rubato, run `praxity import <package> --output <dir> --verify`. A
+standalone install runs `praxity-import`, as in the examples below.
+
 ## Run it
 
 ```sh
@@ -26,19 +29,12 @@ praxity-import <package.zip|unzipped-dir> --output <new-course-dir> --verify
   A given ffmpeg version always produces byte-identical files. The importer
   refuses playlists that name remote addresses or files outside the package.
   Off by default.
-- `--verify` parses the result with Studio and tries an HTML export. It looks
-  for Studio's CLI in `PRAXITY_CLI` (the `praxity` launcher or `praxity.mjs`),
-  then `praxity` on PATH, then the macOS app. The Studio 0.3.0 release
-  (<https://github.com/Praxity/desktop/releases/tag/v0.3.0>) has the CLI as
-  `praxity-cli-0.3.0-macos-arm64.tar.gz` and `-x64.tar.gz`; unpack one and set
-  `PRAXITY_CLI` to `studio-cli/praxity.mjs`. It ships for macOS only, so
-  `--verify` does not support Windows yet. If it finds no CLI, the import
-  fails with `import_failed`, exits 1 and writes nothing. With a Studio older
-  than 0.3.0, the importer writes the course but reports `"ok": false` and
-  exits 1. Leave `--verify` off to import without the check.
-- Output uses Studio's backslash escapes and fill-blank `dropdown` and
-  `word-bank` styles, which need Studio 0.3.0. Studio 0.2.0 shows the
-  backslashes literally and treats those blanks as typed answers.
+- `--verify` parses the result with Studio, then records identity and tries
+  an HTML export on a scratch copy. Through Rubato it finds Studio itself.
+  Standalone, it uses `PRAXITY_CLI` (Studio's `praxity` launcher or
+  `praxity.mjs`), then `praxity` on PATH. If it finds no CLI, the import
+  fails with `import_failed`, exits 1 and writes nothing. Leave `--verify`
+  off to import without the check.
 
 stdout is one JSON object:
 
@@ -90,8 +86,9 @@ course-dir/
      script-generated quiz, a missing file).
    - `approximated`: content kept, behaviour changed (a branching scenario
      became a sequence; an image without alt text was marked decorative).
-3. Make fixes in the `.prax` files. A re-import with `--force` overwrites
-   edits.
+3. Make fixes in the `.prax` files with the prax-format skill. A re-import
+   with `--force` overwrites edits. Before opening or exporting the course,
+   run the prax-format skill's identity step.
 4. Images marked decorative because the source had no alt text need a human
    decision. Search the report for "no alternative text".
 5. `media:video` and `media:audio` losses are files Studio cannot play (HLS
@@ -129,7 +126,7 @@ The import carries the source's look where the source records it:
 - On slides, a title over a full-slide photo becomes a hero heading, a
   picture beside text becomes columns, larger text becomes headings, and
   pictures keep their relative size. The rules are in
-  [ADR 0002](../docs/adr/0002-layout-from-recorded-geometry.md).
+  [ADR 0002](https://github.com/Praxity/praxity-import/blob/main/docs/adr/0002-layout-from-recorded-geometry.md).
 - Rise keeps image layouts, coloured block backgrounds (as section bands),
   quote styles and comfortable spacing.
 
