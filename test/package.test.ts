@@ -27,6 +27,8 @@ function repository(t: TestContext) {
 	mkdirSync(repo);
 	for (const path of ["src", "scripts/package.mjs", "skill", "docs/adr", "fixtures/smoke/scorm", "package.json", "LICENSE", "LICENSING.md", "NOTICE.md", "THIRD-PARTY-NOTICES.md"]) cpSync(join(root, path), join(repo, path), { recursive: true });
 	writeFileSync(join(repo, ".gitignore"), "node_modules/\ncorpus/local/\nout/\n");
+	// Line endings normalize to LF in Git whatever core.autocrlf says, as in a Windows checkout.
+	writeFileSync(join(repo, ".gitattributes"), "* text=auto\n");
 	function install(name: string, owner: string) {
 		let path = dirname(createRequire(join(owner, "package.json")).resolve(name));
 		while (!existsSync(join(path, "package.json")) || JSON.parse(readFileSync(join(path, "package.json"), "utf8")).name !== name) path = dirname(path);
@@ -59,10 +61,10 @@ test("package contains only portable runtime files, complete notices and exact i
 		mkdirSync(dirname(join(repo, path)), { recursive: true });
 		writeFileSync(join(repo, path), "DO NOT SHIP\n");
 	}
-	commit(repo);
-	// Exercise LF normalization even when a clean Windows checkout uses CRLF.
+	// Exercise LF normalization: a clean Windows checkout has CRLF on disk and LF in Git.
 	const cli = join(repo, "src/cli.ts");
 	writeFileSync(cli, readFileSync(cli, "utf8").replace(/\r?\n/g, "\r\n"));
+	commit(repo);
 	assert.equal(run("git", ["status", "--porcelain"], repo).stdout.trim(), "");
 	const result = JSON.parse(pack(repo, output).stdout);
 	const inventory = JSON.parse(readFileSync(join(output, "inventory.json"), "utf8"));

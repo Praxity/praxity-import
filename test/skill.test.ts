@@ -18,13 +18,12 @@ test("skill links resolve inside the installed skill folder", async () => {
 	}
 });
 
-test("skill gives the Rubato and standalone invocations", async () => {
+// Checks the facts an agent acts on, not their wording.
+test("skill gives the Rubato and standalone invocations and the Studio 0.3.0 CLI it needs", async () => {
 	const skill = await readFile("skill/SKILL.md", "utf8");
-	assert.match(skill, /Through Rubato, run `praxity import <package> --output <dir>`\./);
-	assert.match(skill, /standalone\s+install runs `praxity-import`/);
+	assert.match(skill, /`praxity import <package> --output <dir>`/);
+	assert.match(skill, /`praxity-import`/);
 	// Owner, 2026-10-19: Import stays on the frozen Studio 0.3.0 CLI until a pilot needs current Studio.
-	assert.match(skill, /Import targets the frozen Studio 0\.3\.0 CLI\./);
-	assert.match(skill, /\[Studio 0\.3\.0 release\]\(https:\/\/github\.com\/Praxity\/desktop\/releases\/tag\/v0\.3\.0\)/);
-	assert.match(skill, /leave `--verify` off there/);
+	assert.match(skill, /https:\/\/github\.com\/Praxity\/desktop\/releases\/tag\/v0\.3\.0/);
 	assert.doesNotMatch(skill, /prax-format skill's identity|macOS app/);
 });

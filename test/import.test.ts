@@ -6,12 +6,18 @@ import { test } from "node:test";
 import { blocks, inline } from "../src/html.ts";
 import { importPackage } from "../src/import.ts";
 import { extractRise } from "../src/extract/rise.ts";
-import { escapeLines } from "../src/prax.ts";
+import { lesson } from "../src/prax.ts";
 import { coverage } from "../src/verify.ts";
 import { parseXml, textOf, find } from "../src/xml.ts";
 import type { Block } from "../src/model.ts";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "praxity-import-test-"));
+
+/** Blocks as Studio source, written through the lesson writer with its front matter removed. */
+function praxOf(blocks: Block | Block[], opts: { assets?: Map<string, string>; deck?: boolean } = {}): string {
+	const out = lesson({ sourceId: "l", title: "L", pages: [{ blocks: [blocks].flat() }] }, "lesson-x", undefined, opts.assets ?? new Map(), opts.deck);
+	return out.slice(out.indexOf("\n---\n\n") + 6, -1);
+}
 
 function risePackage(): string {
 	const dir = tmp();
@@ -105,7 +111,6 @@ test("video and audio Studio cannot play are dropped with a media loss, not copi
 });
 
 test("adjacent column rows are each closed, so Studio keeps them as separate rows", async () => {
-	const { lesson } = await import("../src/prax.ts");
 	const row = (a: string, b: string): Block => ({ kind: "columns", columns: [[{ kind: "paragraph", text: a }], [{ kind: "paragraph", text: b }]] });
 	const out = lesson({ sourceId: "l", title: "L", pages: [{ blocks: [row("A", "B"), row("C", "D")] }] }, "lesson-x", undefined, new Map());
 	assert.equal(out.match(/^as: col$/gm)?.length, 4);
@@ -113,21 +118,19 @@ test("adjacent column rows are each closed, so Studio keeps them as separate row
 });
 
 test("a card set opens with a bare as: card line and holds every card as a sub-heading", async () => {
-	const { block } = await import("../src/prax.ts");
-	const out = block({ kind: "cards", items: [{ title: "One", front: [{ kind: "paragraph", text: "Front" }], back: [{ kind: "paragraph", text: "Back" }] }, { title: "Two", front: [{ kind: "paragraph", text: "Only" }], back: [] }] }, { assets: new Map(), item: 2 });
+	const out = praxOf({ kind: "cards", items: [{ title: "One", front: [{ kind: "paragraph", text: "Front" }], back: [{ kind: "paragraph", text: "Back" }] }, { title: "Two", front: [{ kind: "paragraph", text: "Only" }], back: [] }] });
 	assert.equal(out, "as: card\nlayout: slides\n\n### One\n\nFront\n\ncard: back\nBack\n\n### Two\n\nOnly\n\nclose: card");
 });
 
 test("in a deck only unlimited-attempt graded questions override Studio's gate, which opens on a correct answer or spent attempts", async () => {
-	const { block } = await import("../src/prax.ts");
 	const q = { kind: "choice", prompt: "Q", scored: true, multiple: false, options: [{ text: "A", correct: true }] } satisfies Block;
-	assert.doesNotMatch(block(q, { assets: new Map(), item: 2, deck: true }), /deckGate/);
-	assert.doesNotMatch(block({ ...q, attempts: 2 }, { assets: new Map(), item: 2, deck: true }), /deckGate/);
-	assert.match(block({ ...q, attempts: 0 }, { assets: new Map(), item: 2, deck: true }), /^scored: true\ndeckGate: attempt\nattempts: 0$/m);
-	assert.doesNotMatch(block({ ...q, attempts: 0 }, { assets: new Map(), item: 2 }), /deckGate/);
+	assert.doesNotMatch(praxOf(q, { deck: true }), /deckGate/);
+	assert.doesNotMatch(praxOf({ ...q, attempts: 2 }, { deck: true }), /deckGate/);
+	assert.match(praxOf({ ...q, attempts: 0 }, { deck: true }), /^scored: true\ndeckGate: attempt\nattempts: 0$/m);
+	assert.doesNotMatch(praxOf({ ...q, attempts: 0 }), /deckGate/);
 	const group = { kind: "group", title: "Quiz", passingScore: 80, blocks: [q] } satisfies Block;
-	assert.doesNotMatch(block(group, { assets: new Map(), item: 1, deck: true }), /deckGate/);
-	assert.equal(block({ kind: "table", rows: [["a", "b"], ["x", "1"]], chart: "line" }, { assets: new Map(), item: 2 }), "| a | b |\n| x | 1 |\nchart: line");
+	assert.doesNotMatch(praxOf(group, { deck: true }), /deckGate/);
+	assert.equal(praxOf({ kind: "table", rows: [["a", "b"], ["x", "1"]], chart: "line" }), "| a | b |\n| x | 1 |\nchart: line");
 });
 
 test("Rise cover image becomes a hero while the description retains its paragraphs", async () => {
@@ -193,20 +196,18 @@ test("html conversion keeps inline formatting and document order", () => {
 });
 
 test("a pipe followed by key: in a value cannot split it into parameters", async () => {
-	const { block } = await import("../src/prax.ts");
-	const out = block({ kind: "image", src: "a.png", alt: "x", caption: "Photo | credit: Jane" }, { assets: new Map(), item: 2 });
+	const out = praxOf({ kind: "image", src: "a.png", alt: "x", caption: "Photo | credit: Jane" });
 	assert.match(out, /^caption: Photo \\\| credit: Jane$/m);
 });
 
 test("a heading over a picture becomes a hero heading; without the picture its subtitle is a paragraph", async () => {
-	const { block } = await import("../src/prax.ts");
-	const ctx = { assets: new Map([["img/bg.jpg", "assets/bg.jpg"]]), item: 1 };
-	assert.equal(block({ kind: "heading", level: 1, text: "Welcome", subtitle: "Part | note: one", background: { src: "img/bg.jpg", alt: "", overlay: "dark" } }, ctx), "# Welcome\nbackground: /assets/bg.jpg\nwidth: full\noverlay: dark\nsubtitle: Part \\| note: one");
-	assert.equal(block({ kind: "heading", level: 2, text: "Welcome", subtitle: "Part one" }, ctx), "## Welcome\n\nPart one");
+	const ctx = { assets: new Map([["img/bg.jpg", "assets/bg.jpg"]]) };
+	assert.equal(praxOf({ kind: "heading", level: 1, text: "Welcome", subtitle: "Part | note: one", background: { src: "img/bg.jpg", alt: "", overlay: "dark" } }, ctx), "# Welcome\nbackground: /assets/bg.jpg\nwidth: full\noverlay: dark\nsubtitle: Part \\| note: one");
+	assert.equal(praxOf({ kind: "heading", level: 2, text: "Welcome", subtitle: "Part one" }, ctx), "## Welcome\n\nPart one");
 });
 
 test("reserved line starts are escaped, ordinary text is not", () => {
-	assert.equal(escapeLines("--- x\n# y\nas: note\nhttps://e.com/v\nplain: text here\nfine"), "\\--- x\n\\# y\n\\as: note\n\\https://e.com/v\n\\plain: text here\nfine");
+	assert.equal(praxOf({ kind: "paragraph", text: "--- x\n# y\nas: note\nhttps://e.com/v\nplain: text here\nfine" }), "\\--- x\n\\# y\n\\as: note\n\\https://e.com/v\n\\plain: text here\nfine");
 });
 
 test("xml reader handles self-closing tags, entities and prefixes", () => {
@@ -236,20 +237,18 @@ test("asset paths from package data cannot reach outside the package", async () 
 });
 
 test("question feedback sits with the question's parameters; new question blocks serialize", async () => {
-	const { block } = await import("../src/prax.ts");
-	const ctx = { assets: new Map([["img/map.png", "assets/img/map.png"]]), item: 2 };
-	assert.match(block({ kind: "match", prompt: "Pair", pairs: [["a", "b"]], correct: "Yes", incorrect: "No" }, ctx), /^## Pair\nas: match\nshuffle: true\ncorrect: Yes\nincorrect: No\n\na :: b$/);
-	assert.match(block({ kind: "order", prompt: "Order", items: ["x", "y"], correct: "Yes" }, ctx), /^## Order\nas: order\ncorrect: Yes\n\n1\. x\n2\. y$/);
-	assert.equal(block({ kind: "matrix", prompt: "Rate", scale: ["Low", "High"], statements: ["Speed", "Cost"] }, ctx), "## Rate\nas: matrix\nwidth: wide\n\n1: Low\n2: High\n\n- Speed\n- Cost");
-	assert.equal(block({ kind: "rating", prompt: "How useful?", scale: ["No", "Yes"] }, ctx), "## How useful?\nas: rating\n\n1: No\n2: Yes");
+	const ctx = { assets: new Map([["img/map.png", "assets/img/map.png"]]) };
+	assert.match(praxOf({ kind: "match", prompt: "Pair", pairs: [["a", "b"]], correct: "Yes", incorrect: "No" }, ctx), /^## Pair\nas: match\nshuffle: true\ncorrect: Yes\nincorrect: No\n\na :: b$/);
+	assert.match(praxOf({ kind: "order", prompt: "Order", items: ["x", "y"], correct: "Yes" }, ctx), /^## Order\nas: order\ncorrect: Yes\n\n1\. x\n2\. y$/);
+	assert.equal(praxOf({ kind: "matrix", prompt: "Rate", scale: ["Low", "High"], statements: ["Speed", "Cost"] }, ctx), "## Rate\nas: matrix\nwidth: wide\n\n1: Low\n2: High\n\n- Speed\n- Cost");
+	assert.equal(praxOf({ kind: "rating", prompt: "How useful?", scale: ["No", "Yes"] }, ctx), "## How useful?\nas: rating\n\n1: No\n2: Yes");
 	assert.equal(
-		block({ kind: "hotspot", prompt: "Find the exit", src: "img/map.png", alt: "Floor plan", spots: [{ label: "Exit; east", x: 12.345, y: 150, correct: true }, { label: "", x: 50, y: 50, correct: false }] }, ctx),
+		praxOf({ kind: "hotspot", prompt: "Find the exit", src: "img/map.png", alt: "Floor plan", spots: [{ label: "Exit; east", x: 12.345, y: 150, correct: true }, { label: "", x: 50, y: 50, correct: false }] }, ctx),
 		"## Find the exit\nas: hotspot\n\n/assets/img/map.png\nalt: Floor plan\nspot: Exit\\; east; 12.3%; 100%; correct\nspot: Spot 2; 50%; 50%",
 	);
 });
 
 test("all scored question kinds put recorded retries in the question header", async () => {
-	const { block } = await import("../src/prax.ts");
 	const questions: Block[] = [
 		{ kind: "choice", prompt: "Pick", multiple: false, options: [{ text: "A", correct: true }, { text: "B", correct: false }] },
 		{ kind: "match", prompt: "Match", pairs: [["A", "X"], ["B", "Y"]] },
@@ -260,7 +259,7 @@ test("all scored question kinds put recorded retries in the question header", as
 	];
 	for (const q of questions) {
 		for (const attempts of [undefined, 1, 3, 0, -1, 2.5, Infinity]) {
-			const output = block({ ...q, attempts } as Block, { assets: new Map(), item: 2, graded: true });
+			const output = praxOf({ ...q, scored: true, attempts } as Block);
 			if (attempts === 3 || attempts === 0) assert.ok(output.split("\n\n")[0]!.includes(`scored: true\nattempts: ${attempts}\nfeedbackMode: retry`));
 			else assert.doesNotMatch(output, /attempts:|feedbackMode:/);
 		}
@@ -279,11 +278,10 @@ test("refusals say whether the course lives on a remote server or in an unknown 
 });
 
 test("fill-blank parts, answers, dropdowns and word banks serialize with Studio escapes", async () => {
-	const { block } = await import("../src/prax.ts");
-	const ctx = { assets: new Map(), item: 2 };
-	assert.equal(block({ kind: "fillBlank", prompt: "Fill", parts: ["A {brace}, a ____ line and ", { answers: ["a|b", "~0.5", "{x}"] }, "."] }, ctx), "## Fill\nas: fill-blank\n\nA \\{brace\\}, a \\____ line and {a\\|b|\\~0.5|\\{x\\}}.");
-	assert.equal(block({ kind: "fillBlank", prompt: "Pick", style: "dropdown", parts: ["Sky is ", { answers: ["blue"], choices: ["red", "blue", "*star"] }, "."] }, ctx), "## Pick\nas: fill-blank\nstyle: dropdown\n\nSky is {red|*blue|\\*star}.");
-	assert.equal(block({ kind: "fillBlank", prompt: "Bank", style: "word-bank", bank: ["red", "blue", "red", "a|b"], parts: [{ answers: ["red"] }, " then ", { answers: [] }] }, ctx), "## Bank\nas: fill-blank\nstyle: word-bank\nbank: red | blue | red | a\\|b\n\n{red} then ____");
+	const ctx = { assets: new Map() };
+	assert.equal(praxOf({ kind: "fillBlank", prompt: "Fill", parts: ["A {brace}, a ____ line and ", { answers: ["a|b", "~0.5", "{x}"] }, "."] }, ctx), "## Fill\nas: fill-blank\n\nA \\{brace\\}, a \\____ line and {a\\|b|\\~0.5|\\{x\\}}.");
+	assert.equal(praxOf({ kind: "fillBlank", prompt: "Pick", style: "dropdown", parts: ["Sky is ", { answers: ["blue"], choices: ["red", "blue", "*star"] }, "."] }, ctx), "## Pick\nas: fill-blank\nstyle: dropdown\n\nSky is {red|*blue|\\*star}.");
+	assert.equal(praxOf({ kind: "fillBlank", prompt: "Bank", style: "word-bank", bank: ["red", "blue", "red", "a|b"], parts: [{ answers: ["red"] }, " then ", { answers: [] }] }, ctx), "## Bank\nas: fill-blank\nstyle: word-bank\nbank: red | blue | red | a\\|b\n\n{red} then ____");
 });
 
 test("an invalid dropdown or word bank falls back to typed blanks with a loss", async () => {
@@ -322,14 +320,12 @@ test("the pass mark comes from the manifest, else the quiz, and goes to praxity.
 });
 
 test("questions in a quiz group are scored; standalone knowledge checks are not", async () => {
-	const { block } = await import("../src/prax.ts");
 	const q = { kind: "choice" as const, prompt: "Q", multiple: false, options: [{ text: "a", correct: true }, { text: "b", correct: false }] };
-	assert.doesNotMatch(block(q, { assets: new Map(), item: 2 }), /scored/);
-	assert.match(block({ kind: "group", title: "Quiz", passingScore: 50, blocks: [q] }, { assets: new Map(), item: 2 }), /### Q\nas: choice\nscored: true\n/);
+	assert.doesNotMatch(praxOf(q), /scored/);
+	assert.match(praxOf({ kind: "group", title: "Quiz", passingScore: 50, blocks: [q] }), /^## Q\nas: choice\nscored: true\n/m);
 });
 
 test("Rise quiz-level settings retain losses without conflating question order, choice order or question retries", async () => {
-	const { block } = await import("../src/prax.ts");
 	const root = risePackage();
 	for (const shuffleAnswerChoices of [false, true]) {
 		const course = { id: "quiz-course", title: "Quiz course", theme: { hideCoverPage: true }, lessons: [{ id: "quiz", type: "quiz", title: "Quiz", settings: { passingScore: 80, randomizeQuestionOrder: true, retryCount: 2, passToContinue: true, shuffleAnswerChoices }, items: [{ id: "q", type: "MULTIPLE_CHOICE", title: "Pick one", answers: [{ id: "a", title: "Alpha", correct: true }, { id: "b", title: "Beta", correct: false }] }] }] };
@@ -338,7 +334,7 @@ test("Rise quiz-level settings retain losses without conflating question order, 
 		const group = result.lessons[0]!.pages[0]!.blocks[0]!;
 		assert.ok(group.kind === "group");
 		assert.equal(group.shuffle === true, shuffleAnswerChoices);
-		const prax = block(group, { assets: new Map(), item: 1 });
+		const prax = praxOf(group);
 		assert.doesNotMatch(prax.split("\n\n")[0]!, /shuffle:|attempts:|requireAll:|deckGate:/);
 		assert.equal(prax.includes("shuffle: true"), shuffleAnswerChoices);
 		assert.doesNotMatch(prax, /attempts:/);
@@ -380,14 +376,13 @@ test("the source theme maps to Studio design: catalogue fonts kept, others fall 
 });
 
 test("columns, image layout and coloured section bands serialize", async () => {
-	const { block } = await import("../src/prax.ts");
-	const ctx = { assets: new Map([["a.png", "assets/a.png"]]), item: 2 };
-	assert.equal(block({ kind: "columns", columns: [[{ kind: "image", src: "a.png", alt: "A", layout: "medium" }], [{ kind: "paragraph", text: "Beside." }]] }, ctx), "as: col\n\n/assets/a.png\nalt: A\nsize: medium\n\nas: col\n\nBeside.\n\nclose: col");
-	assert.equal(block({ kind: "image", src: "a.png", alt: "A", layout: "full" }, ctx), "/assets/a.png\nalt: A\nwidth: full");
-	assert.equal(block({ kind: "image", src: "a.png", alt: "A", layout: "small", ratio: "square", fit: "contain" }, ctx), "/assets/a.png\nalt: A\nsize: small\nratio: square\nfit: contain");
-	assert.equal(block({ kind: "image", src: "a.png", alt: "A", ratio: "square" }, ctx), "/assets/a.png\nalt: A\nratio: square");
-	assert.equal(block({ kind: "image", src: "a.png", alt: "A", fit: "contain" }, ctx), "/assets/a.png\nalt: A\nfit: contain");
-	assert.equal(block({ kind: "divider", tone: "accent" }, ctx), "--\npalette: accent");
+	const ctx = { assets: new Map([["a.png", "assets/a.png"]]) };
+	assert.equal(praxOf({ kind: "columns", columns: [[{ kind: "image", src: "a.png", alt: "A", layout: "medium" }], [{ kind: "paragraph", text: "Beside." }]] }, ctx), "as: col\n\n/assets/a.png\nalt: A\nsize: medium\n\nas: col\n\nBeside.\n\nclose: col");
+	assert.equal(praxOf({ kind: "image", src: "a.png", alt: "A", layout: "full" }, ctx), "/assets/a.png\nalt: A\nwidth: full");
+	assert.equal(praxOf({ kind: "image", src: "a.png", alt: "A", layout: "small", ratio: "square", fit: "contain" }, ctx), "/assets/a.png\nalt: A\nsize: small\nratio: square\nfit: contain");
+	assert.equal(praxOf({ kind: "image", src: "a.png", alt: "A", ratio: "square" }, ctx), "/assets/a.png\nalt: A\nratio: square");
+	assert.equal(praxOf({ kind: "image", src: "a.png", alt: "A", fit: "contain" }, ctx), "/assets/a.png\nalt: A\nfit: contain");
+	assert.equal(praxOf({ kind: "divider", tone: "accent" }, ctx), "--\npalette: accent");
 });
 
 test("images inside columns are resolved and copied like any other asset", async () => {
