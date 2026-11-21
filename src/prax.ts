@@ -1,35 +1,24 @@
 import { neutralize } from "./html.ts";
 import type { Blank, Block, Course, Inline, Lesson } from "./model.ts";
 
-/** YAML scalar. JSON strings are valid YAML and quote everything that needs it. */
 const y = (value: string) => JSON.stringify(value);
 
-/**
- * Literal parameter values (alt, speaker, paths) are single lines: a newline
- * would start another key, and `| key: value` inside a value is Studio's inline
- * parameter separator. Studio does not unescape these fields, so a look-alike
- * bar is the only way to keep such text from splitting.
- */
 const one = (value: string) =>
 	value
 		.replace(/\s*\n\s*/g, " ")
 		.replace(/\|(?=\s*[A-Za-z][\w-]*:)/g, "\u2223")
 		.trim();
 
-/** Inline parameter values (caption, title, feedback, description) decode escapes, so `\|` keeps a bar literal. */
 const param = (value: Inline) =>
 	value
 		.replace(/\s*\n\s*/g, " ")
 		.replace(/(?<!\\)\|(?=\s*[A-Za-z][\w-]*:)/g, "\\|")
 		.trim();
 
-/** A field split on `delim` (table cells on `|`, match sides on `::`, hotspot fields on `;`). */
 const field = (value: Inline, delim: string) => param(value).split(delim).join(`\\${delim}`);
 
-/** A blank answer or word-bank entry: plain text, with its delimiters and marker characters escaped. */
 const answer = (value: string) => value.replace(/[\\|{}]/g, "\\$&").replace(/^[~*]/, "\\$&").trim();
 
-/** Fill-blank sentence text: inline escapes plus braces and runs of underscores, which would make blanks. */
 const sentence = (text: string) =>
 	text
 		.split(/(_{3,})/)
@@ -41,17 +30,12 @@ function blank(b: Blank, style: "dropdown" | "word-bank" | undefined): string {
 	return b.answers.length ? `{${b.answers.map(answer).join("|")}}` : "____";
 }
 
-/**
- * A line of body text that Studio would read as syntax. Probed against Studio
- * 0.2.0: a leading backslash is removed and the line kept as text. Inline
- * markup has no such escape; see `neutralize` in html.ts.
- */
 const RESERVED = [
 	/^#/, /^>/, /^[-+*]\s/, /^-{2,}/, /^\d+[.)]\s/, /^\|/, /^\$\$/, /^```/, /^~~~/,
-	/^[A-Za-z][\w-]*:(\s|$)/, // parameter or keyword (as:, close:, var:, if:, feedback: …)
-	/^[([]\s?[xX ]?\s?[)\]]\s/, // choice markers
-	/^!?\[[^\]]*\]\([^)]*\)$/, // a whole-line link becomes a link/button block
-	/^(https?:\/\/|\/)\S+$/, // a bare URL or path becomes a media block
+	/^[A-Za-z][\w-]*:(\s|$)/,
+	/^[([]\s?[xX ]?\s?[)\]]\s/,
+	/^!?\[[^\]]*\]\([^)]*\)$/,
+	/^(https?:\/\/|\/)\S+$/,
 ];
 
 export function escapeLines(text: Inline): string {
@@ -67,15 +51,11 @@ function media(src: string, assets: AssetMap): string {
 	return /^https?:/i.test(src) ? src : `/${assets.get(src) ?? src}`;
 }
 
-type Ctx = { assets: AssetMap; /** Heading level for container items and questions on this page. */ item: number; shuffle?: boolean; /** Inside a graded quiz group. */ graded?: boolean; /** A guided-slides deck, where graded questions gate Next. */ deck?: boolean };
+type Ctx = { assets: AssetMap;  item: number; shuffle?: boolean;  graded?: boolean;  deck?: boolean };
 
-/** Studio accepts retries on all six scored question kinds, including practice checks. */
 const questionParams = (b: { scored?: boolean; attempts?: number }, ctx: Ctx) => [
 	...(b.scored || ctx.graded ? ["scored: true"] : []),
-	// Studio's deck gate opens on a correct answer or once attempts run out, as slide players do; with
-	// unlimited attempts it would demand a correct answer, so those questions open on submission.
 	...(ctx.deck && (b.scored || ctx.graded) && b.attempts === 0 ? ["deckGate: attempt"] : []),
-	// Zero is Studio's unlimited-attempt sentinel, including on scored questions.
 	...(Number.isInteger(b.attempts) && (b.attempts === 0 || b.attempts! > 1) ? [`attempts: ${b.attempts}`, "feedbackMode: retry"] : []),
 ];
 
@@ -90,10 +70,9 @@ function question(q: Inline, as: string, level: number, extra: string[] = []): s
 	return [`${"#".repeat(level)} ${escapeHeading(heading)}`, `as: ${as}`, ...(description ? ["display: scenario", `description: ${param(description)}`] : []), ...extra, ""];
 }
 
-/** A heading's text follows `#`, so only leading `#` or trailing markers can misparse. */
 const escapeHeading = (t: string) =>
 	param(t)
-		.replace(/^(\*{1,3})([^*].*?)\1$/, "$2") // headings are already strong; drop whole-heading emphasis
+		.replace(/^(\*{1,3})([^*].*?)\1$/, "$2")
 		.replace(/^#+/, (m) => m.replace(/#/g, "＃")) || "Untitled";
 
 function feedback(b: { correct?: Inline; incorrect?: Inline }): string[] {
@@ -154,8 +133,6 @@ export function block(b: Block, ctx: Ctx): string {
 			return out.join("\n");
 		}
 		case "cards": {
-			// A card set opens with a bare `as: card` line; each card is a sub-heading inside it.
-			// (A heading carrying `as: card` makes a one-card set, so cards must not repeat that form.)
 			const level = Math.min(ctx.item + 1, 4);
 			const out: string[] = ["as: card", "layout: slides", ""];
 			b.items.forEach((card) => {
@@ -166,7 +143,6 @@ export function block(b: Block, ctx: Ctx): string {
 			out.push("close: card");
 			return out.join("\n");
 		}
-		// Feedback goes with the question's parameters: Studio drops trailing correct:/incorrect: on match and fill-blank.
 		case "choice": {
 			const opts = b.options.flatMap((o) => [`${b.multiple ? (o.correct ? "[x]" : "[ ]") : o.correct ? "(x)" : "( )"} ${param(o.text)}`, ...(o.feedback ? [`feedback: ${param(o.feedback)}`] : [])]);
 			return [...question(b.prompt, "choice", ctx.item, [...questionParams(b, ctx), ...(ctx.shuffle ? ["shuffle: true"] : []), ...feedback(b)]), ...opts].join("\n");
@@ -187,7 +163,6 @@ export function block(b: Block, ctx: Ctx): string {
 		case "rating":
 			return [...question(b.prompt, "rating", ctx.item), ...b.scale.map((t, i) => `${i + 1}: ${param(t)}`)].join("\n");
 		case "hotspot": {
-			// Spot fields are `;`-separated, and every parameter line must be contiguous.
 			const pct = (n: number) => `${Math.round(Math.min(100, Math.max(0, n)) * 10) / 10}%`;
 			const spots = b.spots.map((sp, i) => `spot: ${field(sp.label, ";") || `Spot ${i + 1}`}; ${pct(sp.x)}; ${pct(sp.y)}${sp.correct ? "; correct" : ""}`);
 			return [...question(b.prompt, "hotspot", ctx.item, questionParams(b, ctx)), media(b.src, ctx.assets), `alt: ${one(b.alt)}`, ...spots].join("\n");
@@ -202,13 +177,6 @@ export function block(b: Block, ctx: Ctx): string {
 	}
 }
 
-/**
- * Content inside a container item must not contain headings at or above the
- * item level (they would start the next item) or other containers (nesting
- * rules differ per container). Headings become bold paragraphs, nested
- * containers and cards flatten into labelled runs, and questions use headings
- * one level below the item.
- */
 function inner(blocks: Block[], ctx: Ctx): string {
 	const deeper = { ...ctx, item: Math.min(ctx.item + 1, 4) };
 	const run = (label: string, body: Block[]) => [`**${label}**`, inner(body, ctx)].filter(Boolean).join("\n\n");
@@ -230,7 +198,6 @@ export function lesson(l: Lesson, id: string, lang: string | undefined, assets: 
 	if (first?.title) front.push("firstPage:", `  title: ${y(one(first.title))}`);
 	front.push("---", "");
 	const body = l.pages.map((p, i) => {
-		// A page that is only a quiz uses the quiz title as its primary heading.
 		const item = p.blocks.length && p.blocks.every((b) => b.kind === "group") ? 1 : pageItemLevel(p.blocks);
 		const blocks = p.blocks.map((b) => block(b, { assets, item, deck })).filter(Boolean).join("\n\n");
 		return i === 0 ? blocks : `--- ${one(p.title ?? "").replace(/^-+/, "")}`.trimEnd() + (blocks ? `\n\n${blocks}` : "");
@@ -238,10 +205,6 @@ export function lesson(l: Lesson, id: string, lang: string | undefined, assets: 
 	return `${front.join("\n")}\n${body.join("\n\n")}\n`;
 }
 
-/**
- * Containers and questions use headings one level below the page's top heading
- * (level 2 on a page without headings), so the outline never skips a level.
- */
 function pageItemLevel(blocks: Block[]): number {
 	const top = Math.min(...blocks.flatMap((b) => (b.kind === "heading" ? [b.level] : [])));
 	return top <= 1 || !Number.isFinite(top) ? 2 : 3;

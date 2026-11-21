@@ -27,7 +27,6 @@ function repository(t: TestContext) {
 	mkdirSync(repo);
 	for (const path of ["src", "scripts/package.mjs", "skill", "docs/adr", "fixtures/smoke/scorm", "package.json", "LICENSE", "LICENSING.md", "NOTICE.md", "THIRD-PARTY-NOTICES.md"]) cpSync(join(root, path), join(repo, path), { recursive: true });
 	writeFileSync(join(repo, ".gitignore"), "node_modules/\ncorpus/local/\nout/\n");
-	// Line endings normalize to LF in Git whatever core.autocrlf says, as in a Windows checkout.
 	writeFileSync(join(repo, ".gitattributes"), "* text=auto\n");
 	function install(name: string, owner: string) {
 		let path = dirname(createRequire(join(owner, "package.json")).resolve(name));
@@ -61,7 +60,6 @@ test("package contains only portable runtime files, complete notices and exact i
 		mkdirSync(dirname(join(repo, path)), { recursive: true });
 		writeFileSync(join(repo, path), "DO NOT SHIP\n");
 	}
-	// Exercise LF normalization: a clean Windows checkout has CRLF on disk and LF in Git.
 	const cli = join(repo, "src/cli.ts");
 	writeFileSync(cli, readFileSync(cli, "utf8").replace(/\r?\n/g, "\r\n"));
 	commit(repo);
@@ -78,7 +76,6 @@ test("package contains only portable runtime files, complete notices and exact i
 	assert.equal(inventory.entry, "src/cli.ts");
 	assert.deepEqual(inventory.dependencies.map((pkg: { name: string; version: string }) => `${pkg.name}@${pkg.version}`).sort(), ["entities@8.1.0", "parse5@8.0.1", "pend@1.2.0", "yauzl@3.4.0"]);
 	assert.ok(files.includes("skill/SKILL.md"));
-	// Rubato installs skill/ alone, so the skill cites docs by public URL and ships none.
 	assert.equal(files.some((file) => file.startsWith("docs/")), false);
 	for (const path of ["LICENSE", "LICENSING.md", "NOTICE.md", "THIRD-PARTY-NOTICES.md"]) assert.ok(inventory.legalFiles.includes(path));
 	assert.equal(files.some((file) => /(?:^|\/)(?:test|tests|corpus|out|scripts|dev-only|\.git)(?:\/|$)|\.(?:map|d\.ts|test\.ts|node|exe|dll|wasm)$/.test(file)), false);

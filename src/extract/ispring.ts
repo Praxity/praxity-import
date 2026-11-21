@@ -9,18 +9,6 @@ import { readManifest } from "../manifest.ts";
 import { slideLayout, type Box, type HeroItem } from "./hero.ts";
 import type { Blank, Block, Course, Inline, Lesson, Loss, Option, Page, Theme } from "../model.ts";
 
-/*
- * iSpring Suite HTML5 output (8 to 10): index.html embeds `presInfo`, a
- * base64 zlib-deflated JSON with the slide list (`s`: title `t`, data file `s`,
- * plain text `x`, notes `n`/`N`, outline level `l`, media `S`/`V`/`wo`/`y`,
- * quiz slides `st:"q"`). Each data/slideN.js calls a load handler with the
- * slide's HTML: text shapes are `<div style="width:0px">` line boxes whose
- * spans wrap mid-word, so `x` (paragraphs `\r`, shapes `\r\n`, in DOM order)
- * is the readable text and the HTML only places images between text shapes.
- * data/quizN.js holds `quizInfo`, base64 JSON of the quiz: groups `d.sl.g[].S`
- * of typed questions whose rich text is `{h: styled html, a: plain html}`.
- * Key names come from the players' own schema tables.
- */
 type J = Record<string, unknown>;
 type Node = DefaultTreeAdapterMap["childNode"];
 type Element = DefaultTreeAdapterMap["element"];
@@ -31,7 +19,6 @@ const num = (v: unknown): number => (typeof v === "number" ? v : Number.NaN);
 const isElement = (n: Node): n is Element => "tagName" in n;
 const attr = (el: Element, name: string) => el.attrs.find((a) => a.name === name)?.value ?? "";
 
-/** A base64 payload that may be zlib-deflated (presInfo) or plain (quizInfo). */
 function decodePayload(b64: string): J {
 	const raw = Buffer.from(b64, "base64");
 	let json: string;
@@ -45,7 +32,6 @@ function decodePayload(b64: string): J {
 
 const ESCAPES: Record<string, string> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" };
 
-/** The slide HTML passed to the load handler, unescaped from its single-quoted JS literal. */
 function slideHtml(file: string): string {
 	const src = readFileSync(file, "utf8");
 	const m = /loadHandler\s*\(\s*\d+\s*,\s*'((?:[^'\\]|\\[\s\S])*)'/.exec(src);
@@ -55,15 +41,10 @@ function slideHtml(file: string): string {
 	);
 }
 
-/** Rich text objects carry a plain `a` HTML beside the styled `h`; strings are already plain. The editor pads runs with zero-width spaces. */
 const rich = (v: unknown): string => (typeof v === "string" ? v : str(obj(v).a) || str(obj(v).h)).replace(/\u200b/g, "");
 
 type Unit = Omit<HeroItem, "blocks"> & ({ kind: "text" } | { kind: "image"; src: string; alt: string; layout?: "full" });
 
-/**
- * The slide's own layer is the last `.kern.slide` child; earlier ones are the
- * master and layout. Text shapes and images are listed in document order.
- */
 function units(html: string, base: string, styles: Map<string, string>, ctx: Ctx): Unit[] {
 	const out: Unit[] = [];
 	const isLine = (n: Node) => isElement(n) && n.tagName === "div" && /^width:\s*0px;?$/.test(attr(n, "style").trim());
@@ -148,7 +129,6 @@ function units(html: string, base: string, styles: Map<string, string>, ctx: Ctx
 	}
 	if (background) ctx.backgroundCounts.set(background, (ctx.backgroundCounts.get(background) ?? 0) + 1);
 	if (own) walk(own, offset(own, "left") + (own === root ? 0 : offset(root!, "left")), offset(own, "top") + (own === root ? 0 : offset(root!, "top")));
-	// ponytail: flat sibling z-indices only; resolve nested stacking contexts if a publish needs them.
 	if (unsupportedStacking) for (const unit of out) unit.box = undefined;
 	else [...out].sort((a, b) => a.order - b.order).forEach((unit, i) => { unit.order = i; });
 	return out;
@@ -160,7 +140,6 @@ type Ctx = {
 	index: string;
 	sourceText: string[];
 	losses: Loss[];
-	/** Source pointer for losses: "slide 3", "slide 3/question 2". */
 	at: string;
 	fontNames: Map<string, string>;
 	fontCounts: Map<string, number>;
@@ -170,7 +149,6 @@ type Ctx = {
 };
 const lose = (ctx: Ctx, source: string, effect: Loss["effect"], detail: string) => ctx.losses.push({ at: ctx.at, source, effect, detail });
 
-/** Paragraph blocks for one text shape; the shape that repeats the slide title is its heading. */
 function shapeBlocks(shape: string, title: string): Block[] {
 	return shape
 		.split(/\r\n?|\n/)
@@ -179,7 +157,6 @@ function shapeBlocks(shape: string, title: string): Block[] {
 		.map((p) => (p === title ? { kind: "heading", level: 2, text: neutralize(p) } : { kind: "paragraph", text: neutralize(p) }));
 }
 
-/** `src` of the index.html media element the presentation refers to by id. */
 function mediaSrc(ctx: Ctx, id: string): string | undefined {
 	if (!id) return undefined;
 	if (/\.\w{2,4}$/.test(id) && !/\s/.test(id)) return resolveSrc({ base: ctx.dir }, id);
@@ -200,7 +177,6 @@ function slidePage(slide: J, ctx: Ctx): Page {
 	const file = str(slide.s) ? insidePackage(ctx.root, posix.join(ctx.dir, str(slide.s))) : undefined;
 	const cssFile = str(slide.c) ? insidePackage(ctx.root, posix.join(ctx.dir, str(slide.c))) : undefined;
 	const styles = new Map<string, string>();
-	// Published slide styles use flat #id rules. Ignore other selectors.
 	if (cssFile) {
 		const css = readFileSync(cssFile, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 		let depth = 0, start = 0, body = 0, nested = false;
@@ -232,7 +208,6 @@ function slidePage(slide: J, ctx: Ctx): Page {
 			items.push({ ...u, blocks: emitted });
 		}
 	} else {
-		// Text drawn as glyph paths or SVG has no line boxes to align with; keep the text, then the pictures.
 		for (const s of shapes) blocks.push(...shapeBlocks(s, title));
 		for (const u of images) if (u.kind === "image") {
 			const image: Block = { kind: "image", src: u.src, alt: u.alt, ...(u.layout ? { layout: u.layout } : {}) };
@@ -276,7 +251,6 @@ function slidePage(slide: J, ctx: Ctx): Page {
 	return { ...(title ? { title } : {}), blocks };
 }
 
-/** Keep literal prose separate from answer data; only the writer emits blank syntax. */
 function blankParts(rt: J, pick: (run: J) => Blank): Array<string | Blank> {
 	const runs = new Map(arr(rt.r).map((r) => [str(r.id), r]));
 	const parts: Array<string | Blank> = [];
@@ -313,7 +287,6 @@ function blankParts(rt: J, pick: (run: J) => Blank): Array<string | Blank> {
 const strs = (v: unknown): string[] => (Array.isArray(v) ? v.map(str) : [str(v)]).filter(Boolean);
 const layoutAlt = (o: J): string => str(obj(obj(o.S).a).t).trim() || str(o.n).trim();
 
-/** Images and free text from a quiz slide's layout, excluding the question placeholders. */
 function layoutBlocks(slide: J, quizDir: string, ctx: Ctx, withText: boolean, used = new Set<string>()): Block[] {
 	const out: Block[] = [];
 	for (const o of arr(obj(slide.a).o)) {
@@ -360,11 +333,9 @@ function question(q: J, n: number, quizDir: string, outer: Ctx): Block[] {
 	const incorrect = graded ? fbText("i") : "";
 	const answered = graded ? "" : fbText("a");
 	const fb = { ...(correct ? { correct } : {}), ...(incorrect ? { incorrect } : {}) };
-	/** Blocks whose kind cannot carry feedback in the model report it once. */
 	const withFeedback = (blocks: Block[]): Block[] => {
 		const last = blocks.at(-1);
 		if (last && ["choice", "match", "order", "categorize", "hotspot", "fillBlank"].includes(last.kind)) {
-			// quizplayer settings.yf maps to s.a; -1 means unlimited.
 			const attempts = num(obj(q.s).a);
 			if (attempts === -1) Object.assign(last, { attempts: 0 });
 			else if (Number.isSafeInteger(attempts) && attempts > 0) Object.assign(last, { attempts });
@@ -381,7 +352,6 @@ function question(q: J, n: number, quizDir: string, outer: Ctx): Block[] {
 		const t = text(rich(c.t));
 		if (t) ctx.sourceText.push(t);
 	}
-	// Inventory source fields before deciding whether the question can be mapped.
 	if (tp === "LikertScale") {
 		for (const s of arr(C.s)) ctx.sourceText.push(text(rich(s)));
 		for (const l of strs(C.l)) ctx.sourceText.push(l);
@@ -414,7 +384,6 @@ function question(q: J, n: number, quizDir: string, outer: Ctx): Block[] {
 		case "Hotspot": {
 			const src = str(C.i).replace(/^storage:\/\//, "");
 			const areas = arr(C.a);
-			// quizplayer scales every area's bounding rect by image size / 1E4, including freeforms.
 			if (!src || !areas.length || areas.some((a) => {
 				const r = obj(a.r);
 				return !["rectangle", "oval", "freeform"].includes(str(a.t)) || typeof a.c !== "boolean"
@@ -527,7 +496,6 @@ function question(q: J, n: number, quizDir: string, outer: Ctx): Block[] {
 				lose("dropped", "fill-in-the-blank has no answer key");
 				return before;
 			}
-			// quizplayer constructs the bank from extra words, then rt.r values, before shuffling.
 			const selection = tp === "MultipleChoiceText" ? { style: "dropdown" as const }
 				: tp === "WordBank" ? { style: "word-bank" as const, bank: [...strs(C.ew), ...arr(rt.r).flatMap((run) => strs(obj(run.data).v))] } : {};
 			return withFeedback([...before, { kind: "fillBlank", prompt, parts, ...selection, ...fb }]);
@@ -540,7 +508,6 @@ function question(q: J, n: number, quizDir: string, outer: Ctx): Block[] {
 	}
 }
 
-/** An intro, instructions or info slide: its text and layout objects as plain blocks. */
 function infoBlocks(slide: J, quizDir: string, ctx: Ctx): Block[] {
 	const plain = text(rich(slide.D));
 	if (plain) ctx.sourceText.push(plain);
@@ -570,7 +537,6 @@ function quizBlocks(slide: J, ctx: Ctx): Block[] {
 	const d = obj(payload.d);
 	const sl = obj(d.sl);
 	if (!Object.keys(sl).length) {
-		// iSpring 8/9 quizzes use a different schema (`q[]` with coded types); their text is counted but not mapped.
 		for (const q of arr(payload.q)) ctx.sourceText.push(...[text(str(q.d)), text(str(q.D))].filter(Boolean));
 		lose(ctx, "ispring:quiz", "dropped", `${rel} uses an older quiz format (${str(payload.T) || "untitled"}, ${arr(payload.q).length} slides) that is not supported`);
 		return [];
@@ -613,7 +579,6 @@ function quizBlocks(slide: J, ctx: Ctx): Block[] {
 	return [...before, { kind: "group", title: neutralize(title), ...(passingScore !== undefined ? { passingScore } : {}), blocks: questions }];
 }
 
-/** Universal player schema from data/player.js; null/custom skins may ignore k.s entirely. */
 function presentationTheme(pres: J, ctx: Ctx): Theme {
 	const skin = obj(pres.k);
 	const palette = obj(skin.l);
@@ -633,7 +598,7 @@ function presentationTheme(pres: J, ctx: Ctx): Theme {
 		try {
 			const schema = obj(parseLiteral(player, schemaStart));
 			universal = obj(schema.controlPanel).A === "c" && obj(obj(schema.controlPanel).showOutline).A === "o";
-		} catch { /* Unknown player syntax: keep the palette, report its layout below. */ }
+		} catch {  }
 	}
 	const side = obj(skin.s), title = obj(skin.t), controls = obj(skin.c);
 	if (Object.keys(skin).length) theme.navigation = universal && (
@@ -700,7 +665,6 @@ export function extractIspring(root: string, dir: string): Course {
 		lessons.at(-1)?.pages.push(page);
 	});
 
-	// Most characters wins, with UTF-16 code-unit order breaking ties. No player-font substitution.
 	const font = [...ctx.fontCounts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
 	if (font) {
 		theme.bodyFont = theme.headingFont = font;

@@ -49,6 +49,8 @@ Trace (design diagnostics).
 
 ## Code
 
+- No code comments. Record non-obvious decisions in `docs/adr/` and known shortcuts as backlog items. `node scripts/check-comments.mjs` enforces this with a ratchet (`--update` after deleting comments).
+
 - Node runs `.ts` directly by type stripping, so write only erasable
   TypeScript and end relative imports in `.ts`.
 - `skill/SKILL.md` is the CLI guide for agents. Update it with any CLI change.

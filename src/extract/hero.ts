@@ -6,7 +6,6 @@ export type HeroItem = { blocks: Block[]; box?: Box; order: number; fontSize?: n
 const valid = (b: Box | undefined): b is Box => !!b && [b.x, b.y, b.w, b.h].every(Number.isFinite) && b.w > 0 && b.h > 0;
 const area = (a: Box, b: Box) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
 
-/** Classify recorded ink by contrast with black/white; absent colours leave Studio's dark default. */
 function overlay(color = ""): "dark" | "light" | undefined {
 	color = ({ white: "#ffffff", black: "#000000" } as Record<string, string>)[color.toLowerCase()] ?? color;
 	if (/^#[\da-f]{3}$/i.test(color)) color = `#${[...color.slice(1)].map((c) => c + c).join("")}`;
@@ -19,14 +18,11 @@ function overlay(color = ""): "dark" | "light" | undefined {
 
 const copy = (item: HeroItem): string => item.blocks.length && item.blocks.every((b) => (b.kind === "paragraph" || b.kind === "heading") && !(b.kind === "heading" && b.background)) ? item.blocks.map((b) => (b as Extract<Block, { kind: "paragraph" | "heading" }>).text).join("\n") : "";
 
-/** Match sequential badges to paragraph rows using only fixed recorded boxes. */
 export function numberedList(blocks: Block[], items: HeroItem[]): void {
 	items = items.filter((item) => item.blocks.length && item.blocks.every((b) => blocks.includes(b) && b.kind === "paragraph"));
 	const badges = items.filter((item) => item.blocks.length === 1 && /^[1-9]\d*$/.test(copy(item))).sort((a, b) => Number(copy(a)) - Number(copy(b)));
 	if (badges.length < 2 || badges.some((item, i) => Number(copy(item)) !== i + 1 || !valid(item.box))) return;
 	const rows = items.filter((item) => !badges.includes(item) && valid(item.box)).flatMap((item) => {
-		// ponytail: paragraphs sharing a box use equal rows; use per-paragraph
-		// geometry instead when the publisher records uneven paragraph heights.
 		const h = item.box!.h / item.blocks.length;
 		return item.blocks.map((block, i) => ({ item, block, y: item.box!.y + i * h, h }));
 	});
@@ -37,7 +33,6 @@ export function numberedList(blocks: Block[], items: HeroItem[]): void {
 	if (matched.some((rows) => rows.length !== 1)) return;
 	const points = matched.map((rows) => rows[0]!);
 	if (new Set(points.map((row) => row.block)).size !== badges.length) return;
-	// Never split a multi-paragraph object or silently reorder its paragraphs.
 	for (const item of new Set(points.map((row) => row.item))) if (item.blocks.some((b, i) => points.filter((row) => row.item === item)[i]?.block !== b)) return;
 	const list: Block = { kind: "list", ordered: true, items: points.map((row) => (row.block as Extract<Block, { kind: "paragraph" }>).text) };
 	const consumed = new Set([...badges.flatMap((item) => item.blocks), ...points.map((row) => row.block)]);
@@ -47,11 +42,6 @@ export function numberedList(blocks: Block[], items: HeroItem[]): void {
 	firstItem.blocks = [list];
 }
 
-/**
- * A fixed, unrotated picture must cover at least 70% of the visible slide.
- * Callers apply vendor chrome/visibility rules before supplying candidates.
- * Items retain reading order; `order` records drawing order independently.
- */
 export function promoteHero(blocks: Block[], items: HeroItem[], width: number, height: number): boolean {
 	const slide = { x: 0, y: 0, w: width, h: height };
 	if (!valid(slide)) return false;
@@ -75,7 +65,6 @@ export function promoteHero(blocks: Block[], items: HeroItem[], width: number, h
 	return false;
 }
 
-/** Apply only to emitted objects: question text and hero content are already consumed. */
 export function slideLayout(blocks: Block[], items: HeroItem[], width: number, height: number): void {
 	promoteHero(blocks, items, width, height);
 	items = items.filter((item) => item.blocks.length && item.blocks.every((b) => blocks.includes(b)));
@@ -106,23 +95,19 @@ export function slideLayout(blocks: Block[], items: HeroItem[], width: number, h
 		let first = items.findIndex((item) => words(item) && side(item) !== 0);
 		if (first < 0) continue;
 		const direction = side(items[first]!);
-		// Include a consecutive beside-picture run before the first text, keeping its reading order.
 		while (first > 0 && side(items[first - 1]!) === direction && blocks.slice(blocks.indexOf(items[first - 1]!.blocks.at(-1)!) + 1, blocks.indexOf(items[first]!.blocks[0]!)).every((b) => picture.blocks.includes(b))) first--;
 		const text: Block[] = [];
 		let end = blocks.indexOf(items[first]!.blocks[0]!);
 		for (const item of items.slice(first)) {
 			if (item === picture) continue;
-			// Unpositioned content can be absent from items, but still ends the text column.
 			const between = blocks.slice(end, blocks.indexOf(item.blocks[0]!));
 			if (side(item) !== direction || between.some((b) => !picture.blocks.includes(b))) break;
 			used.add(item);
-			// Size pictures relative to the slide, without nesting a picture row in this column.
 			if (!words(item)) pictureLayout(item.blocks, [item], width);
 			text.push(...item.blocks);
 			end = blocks.indexOf(item.blocks.at(-1)!) + 1;
 		}
 		used.add(picture);
-		// A tall picture fills its column's width; framing it square keeps the row no taller than it is wide.
 		const anchor = picture.blocks[0];
 		if (anchor?.kind === "image" && picture.box!.h >= picture.box!.w * 1.25) {
 			anchor.ratio = "square";
@@ -130,7 +115,6 @@ export function slideLayout(blocks: Block[], items: HeroItem[], width: number, h
 		}
 		const columns = direction === 1 ? [picture.blocks, text] : [text, picture.blocks];
 		const consumed = new Set([...picture.blocks, ...text]);
-		// The columns take the first text's place: only the picture moves, so text keeps its reading order.
 		const index = blocks.slice(0, blocks.indexOf(text[0]!)).filter((b) => !consumed.has(b)).length;
 		const remaining = blocks.filter((b) => !consumed.has(b));
 		remaining.splice(index, 0, { kind: "columns", columns });
@@ -139,7 +123,6 @@ export function slideLayout(blocks: Block[], items: HeroItem[], width: number, h
 	pictureLayout(blocks, items, width);
 }
 
-/** Size recorded pictures and join consecutive pictures sharing a row. */
 export function pictureLayout(blocks: Block[], items: HeroItem[], width: number): void {
 	const pictures = new Map(items.filter((item) => item.blocks.length === 1 && item.blocks[0]?.kind === "image" && blocks.includes(item.blocks[0]) && valid(item.box)).map((item) => [item.blocks[0]!, item]));
 	for (const [image, item] of pictures) {

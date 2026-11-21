@@ -6,12 +6,10 @@ import { insidePackage } from "../input.ts";
 import { type Block, type Course, ImportError, type Loss } from "../model.ts";
 import { kids, local, parseXml, type XmlElement } from "../xml.ts";
 
-// These are learner strings in the published XML, collected before any mapping.
 const VISIBLE = /^(name|text|prompt|feedback|instructions|caption|tip|alt|title|description|onCompletion|menuText|score|quesCount|singleRight|singleWrong|multiRight|multiWrong|soundTranscript|audioTranscript|.*Label|.*BtnText|.*Btn)$/;
 const body = (node: XmlElement) => node.children.filter((c): c is string => typeof c === "string").join("");
 const mediaHtml = (html: string) => html.replace(/FileLocation \+ '([^']*)'/g, "$1");
 
-/** Published Xerte learningObject XML: text, progressive bullets, and choice quizzes. */
 export function extractXerte(root: string, path = "template.xml"): Course {
 	const file = insidePackage(root, path);
 	if (!file) throw new ImportError("no_readable_content", "Xerte learning-object XML is missing or outside the package.");

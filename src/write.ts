@@ -22,7 +22,6 @@ export function slug(title: string): string {
 	return s || "lesson";
 }
 
-/** Every block, depth first, including container, card and question children. */
 export function* walk(blocks: Block[]): Generator<Block> {
 	for (const b of blocks) {
 		yield b;
@@ -35,16 +34,13 @@ export function* walk(blocks: Block[]): Generator<Block> {
 
 const isLocal = (src: string) => !/^https?:/i.test(src);
 
-/** Embedded files have no disk path to validate with insidePackage. Require plain relative POSIX paths. */
 function embeddedAsset(course: Course, src: string): Buffer | undefined {
 	if (/^[a-zA-Z]:|[\\\0]/.test(src) || src.split("/").some((part) => !part || part === "." || part === "..")) return undefined;
 	return course.embedded?.get(src);
 }
 
-/** File types Studio's player plays directly (its direct-video check and audio parser). */
 const PLAYABLE = { video: ["mp4", "webm", "ogg", "mov"], audio: ["mp3", "wav", "ogg", "m4a", "flac", "aac"] } as const;
 const extension = (src: string) => /\.([a-z0-9]+)$/i.exec(src.split(/[?#]/)[0] ?? "")?.[1]?.toLowerCase() ?? "";
-/** Why Studio cannot play a local media file, or undefined when it can. */
 function unplayable(kind: "video" | "audio", src: string): string | undefined {
 	const ext = extension(src);
 	if ((PLAYABLE[kind] as readonly string[]).includes(ext)) return undefined;
@@ -52,7 +48,6 @@ function unplayable(kind: "video" | "audio", src: string): string | undefined {
 	return `${kind} ${src} is ${what}, which Studio cannot play; Studio plays ${PLAYABLE[kind].join(", ")}. Convert it and add it to the lesson`;
 }
 
-/** Stable, readable asset name: the package path, minus a leading `assets/`, made path-safe. */
 function assetName(src: string, taken: Set<string>): string {
 	const clean = posix.normalize(src).replace(/^assets\//, "").split("/").filter((seg) => seg && seg !== "." && seg !== "..").map((seg) => seg.replace(/[^A-Za-z0-9._-]+/g, "-"));
 	const base = `assets/${clean.join("/") || "file"}`;
@@ -62,12 +57,6 @@ function assetName(src: string, taken: Set<string>): string {
 	return name;
 }
 
-/**
- * Why Studio would reject a dropdown or word-bank question, or undefined when
- * it is valid: each dropdown needs two distinct choices including a correct
- * one; a bank needs no open blanks, a copy of every primary answer per blank
- * and every alternative.
- */
 function selectionProblem(blanks: Blank[], style: "dropdown" | "word-bank", bank: string[]): string | undefined {
 	if (!blanks.length) return "no blanks";
 	if (style === "dropdown") {
@@ -87,10 +76,6 @@ function selectionProblem(blanks: Blank[], style: "dropdown" | "word-bank", bank
 	return missing ? `the word bank lacks the alternative "${missing}"` : undefined;
 }
 
-/**
- * Drop blocks whose local file is missing (Studio refuses to export them) and
- * name the rest. Mutates `course` so the report and the files agree.
- */
 type Conversion = { at: string; source: HlsSource };
 
 function resolveAssets(course: Course, root: string, convert: boolean, conversions: Map<string, Conversion>): AssetMap {
@@ -149,14 +134,12 @@ function resolveAssets(course: Course, root: string, convert: boolean, conversio
 				course.losses.push({ at, source: `file:${b.src}`, effect: "dropped", detail: `${b.kind} file is missing from the package` });
 				return false;
 			}
-			// Copying a format Studio cannot play leaves a broken player that no check notices; say so instead.
 			const problem = isLocal(b.src) && (b.kind === "video" || b.kind === "audio") ? unplayable(b.kind, b.src) : undefined;
 			if (problem) {
 				const hls = b.kind === "video" && extension(b.src) === "m3u8";
 				if (hls && convert) {
 					const source = ffmpegVersion() ? hlsSource(root, b.src) : "ffmpeg is not on PATH";
 					if (typeof source !== "string") {
-						// `video.hls/main.m3u8` becomes `video.mp4`; any other playlist keeps its name with .mp4.
 						const target = /\.hls\/[^/]+\.m3u8$/i.test(b.src) ? `${posix.dirname(b.src).replace(/\.hls$/i, "")}.mp4` : b.src.replace(/\.m3u8$/i, ".mp4");
 						if (!assets.has(b.src)) assets.set(b.src, assetName(target, taken));
 						if (!conversions.has(b.src)) conversions.set(b.src, { at, source });
@@ -168,7 +151,6 @@ function resolveAssets(course: Course, root: string, convert: boolean, conversio
 				course.losses.push({ at, source: `media:${b.kind}`, effect: "dropped", detail: hls ? `${problem}, or run the import with --convert-media and ffmpeg installed` : problem });
 				return false;
 			}
-			// Authors sometimes type "" into an alt field to mean "none"; that is empty, not text.
 			if (b.kind === "image" && /^["'\u201c\u201d\u2018\u2019\s]*$/.test(b.alt)) b.alt = "";
 			if (b.kind === "image" && !b.alt) course.losses.push({ at, source: `file:${b.src}`, effect: "approximated", detail: "image has no alternative text in the source; imported as decorative, review whether it conveys information" });
 			if (!isLocal(b.src)) return true;
@@ -179,14 +161,12 @@ function resolveAssets(course: Course, root: string, convert: boolean, conversio
 	return assets;
 }
 
-/** The course's pass mark: stated by the source, else the one all its assessment groups share. */
 function passMark(course: Course): number | undefined {
 	if (course.passingScore !== undefined) return course.passingScore;
 	const marks = new Set(course.lessons.flatMap((l) => l.pages.flatMap((p) => [...walk(p.blocks)])).flatMap((b) => (b.kind === "group" && b.passingScore !== undefined ? [b.passingScore] : [])));
 	return marks.size === 1 ? [...marks][0] : undefined;
 }
 
-/** Remove every video block that plays `src`, wherever it is nested. */
 function dropVideo(blocks: Block[], src: string): Block[] {
 	return blocks.filter((b) => {
 		if (b.kind === "container") b.items.forEach((it) => (it.blocks = dropVideo(it.blocks, src)));
@@ -203,16 +183,13 @@ export type Written = {
 	lessons: Array<{ file: string; id: string; title: string; pages: number; blocks: number }>;
 	assets: number;
 	losses: Loss[];
-	/** The LMS pass threshold written to praxity.json, in percent. */
 	passingScore?: number;
-	/** ffmpeg's version line when --convert-media converted any file. */
 	mediaConverter?: string;
 };
 
 export async function writeProject(course: Course, root: string, out: string, opts: { convertMedia?: boolean } = {}): Promise<Written> {
 	const conversions = new Map<string, Conversion>();
 	const assets = resolveAssets(course, root, opts.convertMedia === true, conversions);
-	// Conversions run before lessons are written, so a failed one can still leave its block out.
 	let converted = 0;
 	for (const [src, { at, source }] of [...conversions].sort(([a], [b]) => (a < b ? -1 : 1))) {
 		const name = assets.get(src)!;
@@ -229,7 +206,6 @@ export async function writeProject(course: Course, root: string, out: string, op
 			course.losses.push({ at, source: "media:video", effect: "dropped", detail: `video ${src} is an HLS stream Studio cannot play, and ffmpeg could not convert it: ${why}` });
 		}
 	}
-	// The logo goes through the same package-boundary and naming rules as any other asset.
 	let logo: string | undefined;
 	const logoSrc = course.theme?.logo;
 	if (logoSrc && isLocal(logoSrc)) {
@@ -259,8 +235,6 @@ export async function writeProject(course: Course, root: string, out: string, op
 		if (file) await copyFile(file, join(out, name));
 		else await writeFile(join(out, name), embeddedAsset(course, src)!);
 	}
-	// Studio judges pass/fail against praxity.json's export.passingScore (a fraction). The rest is Studio's own
-	// new-project default, so the pass mark is the only change; completionThreshold stays a share of pages.
 	const pass = passMark(course);
 	if (pass !== undefined && pass > 0 && pass <= 100) await writeFile(join(out, "praxity.json"), `${JSON.stringify({ version: 1, export: { format: "scorm-1.2", completionThreshold: 0.8, requireKnowledgeChecks: false, passingScore: pass / 100 } }, null, "\t")}\n`);
 	const converter = converted ? ffmpegVersion() : undefined;

@@ -9,29 +9,14 @@ import { insidePackage } from "../input.ts";
 import type { Block, Course, Inline, Lesson, Loss, Option, Page, Theme } from "../model.ts";
 import { decode, find, kids, parseXml, textOf } from "../xml.ts";
 
-/*
- * Lectora (Online / Inspire) HTML publish. One pageNNN.html per page; its head
- * script declares the page's objects (`var text12 = new jsWndText(); //Content`),
- * their tab/DOM order (`var arWnds = [...]`), which objects make up a question
- * (`qu90.arChld = [...]`, `qu90.arChoices = [...]`) and the
- * navigation functions (`trivNextChapter` names the next chapter's first
- * page). Each device folder (device_Desktop/pageNNN.js) holds the rendered
- * objects as `<var>.rcdData.att_<Device> = { innerHtml, cssText, cwObj, objData }`
- * literals, plus `rcdObj.rcdData.att_<Device>.pageIdx`, the page's place in
- * the title. A test is base64 XML in `_tobj<id>.txt`: name, passing grade,
- * member pages and per-choice feedback. Chapters have no names in the publish.
- */
 type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const str = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 
-/** Answer keys are written as `\uXXXX` escapes inside an already escaped string. */
 const unescapeJs = (s: string) => s.replace(/\\u([0-9a-fA-F]{4})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
-/** Text drawn inside an SVG shape or button. */
 const tspans = (html: string) => [...html.matchAll(/<tspan[^>]*>([^<]*)<\/tspan>/g)].map((m) => decode(m[1] ?? "").trim()).filter(Boolean).join(" ");
 const options = (html: string) => [...html.matchAll(/<option[^>]*\bvalue="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map((m) => ({ value: decode(m[1] ?? ""), label: decode(m[2] ?? "").trim() }));
-/** Actions that only move between pages or submit a question: navigation chrome, not content. */
 const NAV_ACTION = /^(GoTo|OnMClk|xAPI_Statement)/;
 const FORM = new Set(["jsWndFormRadio", "jsWndFormCheck", "jsWndFormEntry", "jsWndFormList", "jsWndFormArea"]);
 
@@ -51,9 +36,7 @@ type PageSrc = {
 	functions: Map<string, Action[]>;
 	groups: Map<string, string[]>;
 	events: Map<string, Event[]>;
-	/** Strings actions write into text objects (feedback swaps, scores). */
 	changed: string[];
-	/** Variables whose runtime value is spliced into text. */
 	variables: string[];
 	css: string;
 	font: J;
@@ -63,14 +46,10 @@ type PageSrc = {
 };
 type Test = { id: string; name: string; passingScore?: number; pages: string[]; feedback: Map<string, string[]> };
 
-/** A page title spliced into a JS string literal that is itself HTML. */
 const jsHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/[\\"]/g, "\\$&");
 
-// Tokenise only to read recorded action statements. Strings/comments remain opaque;
-// no package code is evaluated, and unsupported statements stay explicit losses.
 const actionTokens = (s: string): string[] => (s.match(/"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|[\w$]+|===|!==|==|!=|[^\s]/g) ?? []).filter((s) => !s.startsWith("//") && !s.startsWith("/*"));
 const actionString = (s: string | undefined): string | undefined => s && /^(?:"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*')$/.test(s) ? str(parseLiteral(s)) : undefined;
-/** Index after a balanced (), [] or {} group, without inspecting string tokens. */
 function afterGroup(tokens: string[], start: number): number {
 	const closes: string[] = [];
 	for (let i = start; i < tokens.length; i++) {
@@ -104,7 +83,6 @@ function parseActions(tokens: string[], depth = 0): Action[] {
 			i = end;
 			const yes = statement(level + 1);
 			const no = tokens[i] === "else" ? (i++, statement(level + 1)) : [];
-			// The publisher's completion callback contains no feedback.
 			if (/^typeofpF===?['"]function['"]$/.test(condition) && yes.every((a) => "call" in a && a.call === "pF" && !a.args.length) && !no.length) return [];
 			return [{ condition, yes, no }];
 		}
@@ -115,7 +93,6 @@ function parseActions(tokens: string[], depth = 0): Action[] {
 		}
 		const part = tokens.slice(start, i);
 		if (tokens[i] === ";") i++;
-		// Disabled publisher actions can contain only a literal true expression.
 		if (part.length === 1 && part[0] === "true") return [];
 		const open = part.indexOf("(");
 		const call = part.slice(0, open).join("");
@@ -216,7 +193,6 @@ function readPage(root: string, file: string, device: string): PageSrc {
 		});
 	}
 	const changed = [...`${html}\n${src}`.matchAll(/\.changeContents\(\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => text(str(parseLiteral(`"${m[1]}"`)))).filter((s) => /\p{L}/u.test(s));
-	// Only linked local stylesheets, in document order. Remote fonts are not fetched.
 	const css: string[] = [];
 	for (const m of html.matchAll(/<link\b[^>]*>|<style\b[^>]*>([\s\S]*?)<\/style>/gi)) {
 		if (m[1] !== undefined) css.push(m[1]);
@@ -261,7 +237,6 @@ function readPage(root: string, file: string, device: string): PageSrc {
 	return { file, id, title, idx, nextChapter, order, objects, questions, functions, groups, events, changed, variables, css: css.join("\n"), font, background, backgroundImage, pageStyle };
 }
 
-/** Lectora uses hex and rgb() in page styles, plus black/white in its base CSS. */
 function colour(value: string | undefined): string | undefined {
 	const s = value?.trim().toLowerCase() ?? "";
 	if (/^#[\da-f]{6}$/.test(s)) return s;
@@ -278,11 +253,8 @@ const fontFamily = (s: string | undefined) => s?.split(",")[0]?.trim().replace(/
 
 function textRules(source: string): Map<string, Record<string, string>> {
 	const rules = new Map<string, Record<string, string>>();
-	// ponytail: only flat body/.ttxt rules and inline styles; a full CSS cascade is
-	// needed if a future publish relies on conditional rules or selector inheritance.
 	let css = source.replace(/\/\*[\s\S]*?\*\//g, "");
 	while (/@[^{}]*\{[^{}]*\}/.test(css)) css = css.replace(/@[^{}]*\{[^{}]*\}/g, "");
-	// Drop nested at-rule bodies rather than selecting a viewport during import.
 	css = css.replace(/@[^{}]*\{(?:[^{}]|\{[^{}]*\})*\}/g, "");
 	for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) for (const s of (m[1] ?? "").split(",").map((s) => s.trim())) {
 		if (/^(body|\.ttxt|(?:\.ttxt )?h[1-6])$/.test(s)) rules.set(s, { ...rules.get(s), ...declarations(m[2] ?? "") });
@@ -329,7 +301,6 @@ function lectoraTheme(root: string, pages: PageSrc[], isChrome: (o: Obj) => bool
 			if (markedTemplate && o.cls === "jsWndShape" && /^(header|title|nav(?:igation)?)[ _-]*(background|bar)$/i.test(str(o.cw.name))) {
 				add("accent", shapeFill(o), 1);
 			}
-			// Authored Background_Color shapes cover the page's underlying backgrd colour.
 			if (markedTemplate && o.cls === "jsWndShape" && /^background[ _-]*color$/i.test(str(o.cw.name))) {
 				background = shapeFill(o) || background;
 			}
@@ -357,8 +328,6 @@ function lectoraTheme(root: string, pages: PageSrc[], isChrome: (o: Obj) => bool
 		add("background", background, 1);
 	}
 	if (!weights.get("bodyFont")?.size) weights.set("bodyFont", pageFonts);
-	// Fonts/text colours are weighted by non-whitespace Unicode characters. Page
-	// backgrounds and marked template colours/logos by pages; ties use code-unit order.
 	const theme: Theme = { navigation: "slides" };
 	for (const [key, values] of weights) {
 		const value = [...values].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
@@ -391,7 +360,6 @@ function readTests(root: string): Test[] {
 		});
 }
 
-/** Read the supported action subset; never execute package JavaScript. */
 function resolveActions(p: PageSrc, entry: string | Action[], condition?: (value: string) => boolean | undefined) {
 	const visited = new Set<string>();
 	const problems = new Set<string>();
@@ -447,7 +415,6 @@ function resolveActions(p: PageSrc, entry: string | Action[], condition?: (value
 	return { shown, changed, messages, visited, problems };
 }
 
-/** Resolve only the publisher's recorded feedback operations, in authored order. */
 function questionFeedback(p: PageSrc, q: Question, losses: Loss[]) {
 	const cw = p.objects.get(q.name)?.cw ?? {};
 	const keys = [...arr(cw.arrAns), ...arr(cw.arAnswers)].map((a) => unescapeJs(str(a)));
@@ -488,7 +455,6 @@ function questionFeedback(p: PageSrc, q: Question, losses: Loss[]) {
 		const value = [...parts, ...messages].filter(Boolean).join(" ");
 		if (value) fields[outcome] = value;
 	}
-	// A hidden object also referenced outside these chains is shared content.
 	const shared = new Set<string>();
 	const sharedActions = new Set<Action[]>();
 	const preserve = (actions: Action[]) => {
@@ -539,7 +505,6 @@ function groupMembers(p: PageSrc) {
 	return members;
 }
 
-/** A single-use scene, or buttons that hide the other panels, records an exclusive choice. */
 function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss[]) {
 	if (p.questions.length) return;
 	const ordered = p.order.map((name) => p.objects.get(name)).filter((o): o is Obj => !!o);
@@ -557,7 +522,6 @@ function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss
 			const o = p.objects.get(n);
 			return o && result.shown.get(n) === true && readable(o);
 		}));
-		// Nested groups are part of their outer panel, not additional outcomes.
 		const outer = panels.filter(([name]) => !panels.some(([other, children]) => other !== name && children.has(name)));
 		return outer.length === 1 ? [{ button, result, panel: outer[0]![0], children: outer[0]![1] }] : [];
 	});
@@ -568,7 +532,6 @@ function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss
 		const hidesChoices = candidates.every((c) => a.result.shown.get(c.button.name) === false);
 		if (a.result.shown.get(b.panel) !== false && !hidesChoices) return;
 	}
-	// An unresolved sibling button must not disappear from the imported choice.
 	if (buttons.some((b) => !candidates.some((c) => c.button === b) && candidates.some((c) => c.result.shown.get(b.name) === false))) return;
 	const consumed = new Set<string>();
 	const retainedChanges = new Set<string>();
@@ -580,7 +543,6 @@ function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss
 		const optionLabel = (o: Obj) => o.cls === "jsWndText" && o.hidden === button.hidden && readable(o) && !candidates.some((other) => other.children.has(o.name));
 		const labelledBy = [...button.html.matchAll(/\baria-labelledby=["']([^"']+)["']/g)].flatMap((m) => m[1]!.split(/\s+/));
 		const linked = ordered.filter((o) => optionLabel(o) && (labelledBy.includes(o.htmlId) || [...o.html.matchAll(/<label\b[^>]*\bfor=["']([^"']+)["']/g)].some((m) => m[1] === button.htmlId)));
-		// Only a group containing one option can supply text attached to that option.
 		const attached = linked.length ? linked : [...members.values()].filter((names) => names.has(button.name) && candidates.filter((other) => names.has(other.button.name)).length === 1)
 			.sort((a, b) => a.size - b.size).map((names) => ordered.filter((o) => names.has(o.name) && optionLabel(o))).find((texts) => texts.length);
 		const optionText = attached?.map(readable).join(" ") || neutralize(tspans(button.html)) || inline(button.html) || neutralize(str(button.data.altValue) || str(button.data.titleValue));
@@ -589,7 +551,6 @@ function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss
 		for (const o of attached ?? []) consumed.add(o.name);
 		const markers = new Set([...children].flatMap((name) => {
 			const o = p.objects.get(name);
-			// Authored object names are metadata; learner-facing feedback prose is never an answer key.
 			const marker = /(?:^|[_ -])(incorrect|correct)(?:$|[_ -])/i.exec(o?.authoredName ?? "")?.[1]?.toLowerCase();
 			return marker ? [marker === "correct"] : [];
 		}));
@@ -621,7 +582,6 @@ function branchingChoice(p: PageSrc, isChrome: (o: Obj) => boolean, losses: Loss
 	return { block, at: candidates[0]!.button.name, consumed, retainedChanges };
 }
 
-/** Recorded reveal chains can coexist with separate button-state/animation actions. */
 function revealAccordion(p: PageSrc, isChrome: (o: Obj) => boolean) {
 	if (p.questions.length) return;
 	const members = groupMembers(p);
@@ -653,7 +613,6 @@ function revealAccordion(p: PageSrc, isChrome: (o: Obj) => boolean) {
 	if (visible.length < 2) return;
 	for (const a of visible) for (const b of visible) if (a !== b && [...a.children].some((n) => b.children.has(n))) return;
 	const consumed = new Set(visible.flatMap((c) => [c.button.name, ...c.children]));
-	// The publisher duplicates buttons for visited states. They do not add items.
 	for (const c of candidates) if (visible.some((v) => v.panel === c.panel && v.title === c.title)) consumed.add(c.button.name);
 	for (const name of closeButtons) consumed.add(name);
 	return { at: visible[0]!.button.name, consumed, items: visible.map((c) => ({ title: c.title, objects: ordered.filter((o) => c.children.has(o.name) && !closeButtons.has(o.name) && c.shown.get(o.name) === true) })) };
@@ -685,7 +644,6 @@ export function extractLectora(root: string): Course {
 
 	const label = (o: Obj) => str(o.data.altValue) || str(o.data.titleValue) || tspans(o.html);
 	const isNav = (o: Obj) => o.actions.every((a) => NAV_ACTION.test(a));
-	/** What a learner sees of an object, used to spot template chrome and to inventory text. */
 	const seen = (o: Obj): string => {
 		switch (o.cls) {
 			case "jsWndText":
@@ -703,7 +661,6 @@ export function extractLectora(root: string): Course {
 		}
 	};
 
-	/** Objects shown on three or more pages are the title's template (logo, skip link, nav), not page content. */
 	const chrome = new Set<string>();
 	{
 		const usage = new Map<string, Set<string>>();
@@ -715,8 +672,6 @@ export function extractLectora(root: string): Course {
 		for (const [k, files] of usage) if (files.size >= 3) chrome.add(k);
 		if (chrome.size) losses.push({ at: "package", source: "lectora:template", effect: "dropped", detail: `${chrome.size} objects repeated on 3+ pages are treated as title template chrome and skipped: ${[...chrome].sort().map((k) => k.replace(/^jsWnd\w+:/, "")).join(", ").slice(0, 300)}` });
 	}
-	// Authored pattern objects must also cover the page and have no readable label
-	// or actions. A filename, or an ordinary large photograph, is not a designation.
 	const backgrounds = new Set<Obj>();
 	for (const p of pages) for (const o of p.objects.values()) {
 		if (o.cls !== "jsWndImage" || o.actions.length || label(o) || /\balt="[^"]+"/.test(o.html)) continue;
@@ -736,8 +691,6 @@ export function extractLectora(root: string): Course {
 		const cls = qo?.cls ?? "";
 		const cw = qo?.cw ?? {};
 		const answers = [...arr(cw.arrAns), ...arr(cw.arAnswers)].map((a) => unescapeJs(str(a)));
-		// A multiple-response key is one comma-joined string, and answers may themselves contain commas:
-		// an option is correct when it appears whole as a delimited part. Entities are normalised on both sides.
 		const keys = answers.map((a) => text(a));
 		const isCorrect = (value: string) => {
 			const v = text(value);
@@ -783,8 +736,6 @@ export function extractLectora(root: string): Course {
 			case "jsWndEssayQuestion":
 				return [{ kind: "freeResponse", prompt }];
 			case "jsWndOrdinalQuestion": {
-				// trivantis-questions.js uses arChoices[].val as the response token,
-				// arrAns[0] as the comma-separated correct order, and btnnm for each list.
 				const values = q.choices.map((c) => str(c.val));
 				const order = answers.length === 1 ? answers[0]!.split(",") : [];
 				const labels = new Map(q.choices.map((c) => {
@@ -822,7 +773,6 @@ export function extractLectora(root: string): Course {
 		const buttons = new Set<string>();
 		const ctx = { base: "", lose: (source: string, detail: string) => losses.push({ at, source, effect: "dropped" as const, detail }) };
 		const questionOf = new Map(p.questions.flatMap((q) => q.children.map((c) => [c, q] as const)));
-		// Assessment groups score every member, so these practice-only choices stay outside tests.
 		const branch = testOf.has(p.file) ? undefined : branchingChoice(p, isChrome, losses);
 		const reveals = branch ? undefined : revealAccordion(p, isChrome);
 		const feedbackOnly = new Set(branch?.consumed ?? reveals?.consumed);
@@ -844,7 +794,6 @@ export function extractLectora(root: string): Course {
 			if (o.actions.length && o.cls !== "jsWndTextButton") count("object with actions");
 			switch (o.cls) {
 				case "jsWndText":
-					// Spacer paragraphs hold only zero-width or non-breaking spaces.
 					return o.data.bHideFromScrRdr === true ? [] : htmlBlocks(o.html, ctx).filter((b) => b.kind !== "paragraph" || /[^\s​﻿ ]/.test(b.text));
 				case "jsWndImage": {
 					const css = declarations(o.css);
@@ -920,7 +869,6 @@ export function extractLectora(root: string): Course {
 			}
 		}
 		for (const q of p.questions) if (!done.has(q.name)) visible.push(...(questions.get(q.name) ?? []));
-		// Traverse the final reading order, including accordion items, with one set per page.
 		const pictures = new Set<string>();
 		const deduplicate = (blocks: Block[]): void => {
 			blocks.splice(0, blocks.length, ...blocks.filter((b) => {
@@ -950,13 +898,10 @@ export function extractLectora(root: string): Course {
 		return { title: p.title, blocks: [...visible, ...hidden] };
 	};
 
-	/** Everything a learner can read on a page, gathered without going through the block mapping. */
 	const inventory = (p: PageSrc) => {
 		const push = (s: string) => s.trim() && sourceText.push(s.trim());
 		push(p.title);
 		const inOrder = [...p.order.map((n) => p.objects.get(n)), ...[...p.objects.values()].filter((o) => !p.order.includes(o.name))];
-		// `seen` keys images by file for the chrome check; a learner reads the alt text. A button's
-		// hidden state variants (Button1_visited) repeat its label, so each label counts once per page.
 		const labels = new Set<string>();
 		for (const o of inOrder) {
 			if (!o || isChrome(o)) continue;
@@ -969,8 +914,6 @@ export function extractLectora(root: string): Course {
 		for (const q of p.questions) for (const t of tests) (t.feedback.get(q.name.replace(/^qu/, "")) ?? []).forEach((fb) => push(text(fb)));
 	};
 
-	/** Headings inside an assessment group would start a new item; keep them as bold text. */
-	// Headings inside an assessment group become bold text; a hero keeps its picture and subtitle as blocks.
 	const demote = (b: Block): Block[] =>
 		b.kind !== "heading"
 			? [b]
@@ -980,7 +923,6 @@ export function extractLectora(root: string): Course {
 					...(b.subtitle ? [{ kind: "paragraph", text: b.subtitle } as Block] : []),
 				];
 
-	/** Consecutive pages of one test become a single page holding the assessment group. */
 	const fold = (items: Array<{ page: Page; test?: Test }>): Page[] => {
 		const out: Page[] = [];
 		for (let i = 0; i < items.length; ) {

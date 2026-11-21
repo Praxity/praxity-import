@@ -7,9 +7,7 @@ type Node = DefaultTreeAdapterMap["childNode"] | DefaultTreeAdapterMap["document
 type Element = DefaultTreeAdapterMap["element"];
 
 export type HtmlContext = {
-	/** Directory of the HTML source, relative to the package root, for resolving `src`. */
 	base: string;
-	/** Record a construct the conversion drops; optional so plain text callers can ignore it. */
 	lose?: (source: string, detail: string) => void;
 };
 
@@ -23,13 +21,6 @@ export function parse(html: string): DefaultTreeAdapterMap["documentFragment"] {
 	return parseFragment(html);
 }
 
-/**
- * Plain text as `.prax` inline source. A backslash makes reserved punctuation
- * literal (Studio grammar v3 escaping); only characters that would otherwise
- * start markup are escaped, so ordinary text such as snake_case, [1] or a@b.c
- * stays readable.
- */
-/** A string that is only a file name (authoring tools default alt text and titles to it); not a text alternative. */
 export const isFileName = (s: string) => /^[^\r\n]+\.(?:png|jpe?g|gif|svg|webp|bmp|tiff?|mp4|m4v|mov|webm|mp3|wav|m4a)$/i.test(s.trim());
 
 export function neutralize(text: string): string {
@@ -44,13 +35,11 @@ export function neutralize(text: string): string {
 		.replace(/(^|[\s(])_(?=\S)|(?<=\S)_(?=$|[\s).,;:!?])/g, (m) => m.replace("_", "\\_"));
 }
 
-/** Undo `neutralize` for literal fields such as alt text, which Studio does not unescape. */
 export const unescape = (inline: string) => inline.replace(/\\([\\*~=`[\]{}@|:;_#>!()+\/$.?-])/g, "$1");
 
 const hasBlock = (el: Element): boolean =>
 	el.childNodes.some((c) => isElement(c) && !SKIP.has(c.tagName) && (BLOCK.has(c.tagName) || hasBlock(c)));
 
-/** Wrap `inner` in a marker, keeping edge spaces outside so the markdown stays valid. */
 function wrap(inner: string, mark: string): string {
 	const trimmed = inner.trim();
 	if (!trimmed) return inner;
@@ -87,12 +76,10 @@ function inlineOf(node: Node): string {
 			return `[${text.replace(/[[\]]/g, "")}](${href.replace(/[()\s]/g, encodeURIComponent)})`;
 		}
 		default:
-			// A block element reached through inline flow (a <p> in a question stem) keeps its own line.
 			return BLOCK.has(tag) ? `\n${inner}\n` : inner;
 	}
 }
 
-/** Collapse to a single paragraph's worth of inline text; `\n` survives as a hard break. */
 export function tidy(text: string): Inline {
 	return text
 		.split("\n")
@@ -103,18 +90,15 @@ export function tidy(text: string): Inline {
 		.replace(/(^|\s)\*\*(\s|$)/g, "$1$2");
 }
 
-/** Inline markdown for an HTML fragment, flattening any block structure into one run. */
 export function inline(html: string | undefined): Inline {
 	if (!html) return "";
 	return tidy(inlineOf(parse(html)));
 }
 
-/** Single-line inline text, for headings, labels, options and cells. */
 export function line(html: string | undefined): Inline {
 	return inline(html).replace(/\n+/g, " ");
 }
 
-/** Plain text of an HTML fragment, for alt text, titles and source-text inventories. */
 export function text(html: string | undefined): string {
 	if (!html) return "";
 	const walk = (n: Node): string => {
@@ -141,7 +125,6 @@ export function resolveSrc(ctx: HtmlContext, src: string | undefined): Src | und
 
 const VIDEO_HOST = /(youtube\.com|youtu\.be|vimeo\.com|loom\.com|wistia\.)/i;
 
-/** Convert an HTML fragment to blocks, preserving document order. */
 export function blocks(html: string | undefined, ctx: HtmlContext): Block[] {
 	if (!html) return [];
 	return flow(parse(html).childNodes, ctx);
@@ -200,7 +183,6 @@ function element(el: Element, ctx: HtmlContext): Block[] {
 			const inner = flow(el.childNodes.filter((c) => c !== caption), ctx);
 			const img = inner.find((b) => b.kind === "image");
 			if (img && caption) {
-				// A nested figure's image already has its own caption; keep the outer one as text.
 				const value = line(serialize(caption));
 				if (img.caption) inner.push({ kind: "paragraph", text: value });
 				else img.caption = value;
@@ -258,7 +240,6 @@ function images(el: Element, ctx: HtmlContext): Block[] {
 	return found;
 }
 
-/** Nested lists flatten into the parent: `.prax` list items are single inline runs here. */
 function listItems(list: Element): Inline[] {
 	const items: Inline[] = [];
 	for (const li of list.childNodes) {

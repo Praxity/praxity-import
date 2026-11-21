@@ -6,7 +6,6 @@ import { readManifest } from "../manifest.ts";
 import { type Block, type Course, ImportError, type Lesson, type Loss, type Page } from "../model.ts";
 import { find, parseXml } from "../xml.ts";
 
-/** SCORM exports select the Markdown with the item's parameters, not its filename. */
 export function liaSources(root: string): string[] {
 	const file = insidePackage(root, "imsmanifest.xml");
 	if (!file) return [];
@@ -19,7 +18,6 @@ export function liaSources(root: string): string[] {
 
 const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Small inline subset, passed through the existing HTML converter for escaping. */
 function markdown(s: string): string {
 	return s.replace(/<[^>]+>|`([^`\n]+)`|(!\?|\?|!)?\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)|\*\*([^*\n]+)\*\*|\*([^*\n]+)\*|__([^_\n]+)__|\b_([^_\n]+)_\b/g,
 		(all, code: string, image: string, label: string, url: string, title: string, bold: string, italic: string, strong: string, emphasis: string) => {
@@ -44,7 +42,6 @@ export function extractLiaScript(root: string): Course {
 		const lose = (n: number, source: string, detail: string, effect: Loss["effect"] = "dropped") => losses.push({ at: `${path}:${n + 1}`, source: `liascript:${source}`, effect, detail });
 		if (!file) { lose(0, "source", "Markdown source is missing or outside the package"); continue; }
 		const original = readFileSync(file, "utf8").replace(/\r\n?/g, "\n");
-		// Strip runtime content only outside code examples; retain source line numbers.
 		const runtime = /^[ \t]*(`{3,}|~{3,})[^\n]*$|(`+)[^\n]*?\2|<!--[\s\S]*?(?:-->|(?![\s\S]))|<(script|style)\b[^>]*>[\s\S]*?<\/\3\s*>/gim;
 		let clean = "";
 		let cursor = 0;
@@ -64,7 +61,6 @@ export function extractLiaScript(root: string): Course {
 			cursor = runtime.lastIndex;
 		}
 		clean += original.slice(cursor);
-		// Inventory the source independently of block mapping, including unsupported visible constructs.
 		const inventory = clean.replace(/^\s*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)^\s*\1\s*$/gm, (_all, _fence, code: string) => escape(code));
 		sourceText.push(text(markdown(inventory.replace(/^\s*\{\{[^\n]*?\}\}\s*/gm, "").replace(/^\s*\[(?:\([ Xx]\)|\[[ Xx]\])\]\s*/gm, ""))));
 		const lines = clean.split("\n");
@@ -135,7 +131,6 @@ export function extractLiaScript(root: string): Course {
 			}
 			if (/\[\[|\[\([ Xx]\)\]|\{\{|^\s*@|^\s*--\{|\$\$/.test(s)) {
 				flush(); lose(i, "extension", "unsupported quiz, macro, animation, narration or formula syntax");
-				// Animation prefixes do not change the text that follows them.
 				s = s.replace(/^\s*\{\{[^}]*\}\}\s*/, "");
 				if (!s.trim() || /\[\[|^\s*@|^\s*--\{|\$\$/.test(s)) continue;
 			}

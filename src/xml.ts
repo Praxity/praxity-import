@@ -1,9 +1,3 @@
-/**
- * Minimal XML reader for SCORM manifests and similar descriptor files. Handles
- * elements, attributes, self-closing tags, text, CDATA, comments and the five
- * predefined entities plus numeric references. No DTDs or namespaces: element
- * names keep their prefix, and `local()` strips it for matching.
- */
 export type XmlElement = { name: string; attrs: Record<string, string>; children: XmlNode[] };
 export type XmlNode = XmlElement | string;
 

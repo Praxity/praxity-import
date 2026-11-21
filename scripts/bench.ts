@@ -1,14 +1,3 @@
-/**
- * Import every corpus package, twice, and score the result. Writes
- * out/bench/scoreboard.json and scoreboard.tsv, sorted by id so runs diff.
- *
- *   node scripts/bench.ts [--only <substring>] [--no-verify] [--jobs 4] [--release]
- *
- * Sources: corpus/sources.json (public) and the corpus folder's
- * sources.local.json (private, never committed); see scripts/corpus.ts. A
- * listed input that is missing fails the run. --release also requires the
- * private list, so a release bench cannot quietly cover only public packages.
- */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
@@ -30,7 +19,6 @@ if (!privateList) {
 }
 const sources = all.filter((s) => !values.only || s.id.includes(values.only)).sort((a, b) => (a.id < b.id ? -1 : 1));
 
-/** Hash of every file under a directory, by relative path, except the report (it may carry verification). */
 function treeHash(dir: string): string {
 	const h = createHash("sha256");
 	const walk = (d: string) => {
@@ -75,7 +63,6 @@ async function bench(s: Source): Promise<Row> {
 		await rm(b, { recursive: true, force: true });
 		const report: Report = await importPackage(input, a, { verify: !values["no-verify"] });
 		await importPackage(input, b);
-		// The repeat skips verification, so compare everything except the report's verification block.
 		const strip = (dir: string) => {
 			const p = join(dir, "import-report.json");
 			const r = JSON.parse(readFileSync(p, "utf8"));
@@ -124,7 +111,6 @@ await writeFile(join(here, "out/bench/scoreboard.json"), `${JSON.stringify(rows,
 await writeFile(join(here, "out/bench/scoreboard.tsv"), `${[cols.join("\t"), ...rows.map((r) => cols.map((c) => r[c] ?? "").join("\t"))].join("\n")}\n`);
 const passed = rows.filter((r) => r.ok).length;
 process.stdout.write(`${passed}/${rows.length} imported and verified; ${rows.filter((r) => r.deterministic === false).length} non-deterministic. See out/bench/scoreboard.tsv\n`);
-// Refusing an unsupported tool is expected; a missing input, an import Studio rejects, or output that changes between runs, is a regression.
 const regressions = rows.filter((r) => r.error === MISSING || r.deterministic === false || (r.detected && r.parse !== undefined && !r.ok));
 if (regressions.length) {
 	process.stdout.write(`Regressions: ${regressions.map((r) => r.id).join(", ")}\n`);

@@ -4,19 +4,11 @@ import { join } from "node:path";
 import { blocks as htmlBlocks, inline, line, neutralize, text } from "../html.ts";
 import type { Block, Course, Item, Lesson, Loss, Page, Theme } from "../model.ts";
 
-/*
- * Adapt Learning builds keep content as JSON in course/<lang>/: course.json,
- * contentObjects.json (menus and pages), articles.json, blocks.json and
- * components.json. Each record names its parent with `_parentId`; array order
- * is display order. Text fields are HTML. Asset paths are relative to the
- * build root (course/en/images/…).
- */
 type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const arr = (v: unknown): J[] => (Array.isArray(v) ? v.map(obj) : []);
 const str = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 
-/** Published Adapt builds carry their theme in this stylesheet, not course JSON. */
 function themeFromCss(root: string, losses: Loss[]) {
 	const file = "adapt/css/adapt.css";
 	const path = insidePackage(root, file);
@@ -26,8 +18,6 @@ function themeFromCss(root: string, losses: Loss[]) {
 	let depth = 0;
 	let start = 0;
 	let opening = 0;
-	// ponytail: unconditional compound class selectors only; use a CSS parser for descendant/conditional styling.
-	// Quoted strings and comments consume their braces; conditional rules never become defaults.
 	for (const token of css.matchAll(/\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[{};]/g)) {
 		const char = token[0];
 		if (char === "{") {
@@ -44,7 +34,6 @@ function themeFromCss(root: string, losses: Loss[]) {
 					const property = match[1]!.toLowerCase();
 					const important = /\s*!important\s*$/i.test(match[2]!);
 					if (important || !declarations.get(property)?.important) declarations.set(property, { value: match[2]!.replace(/\s*!important\s*$/i, ""), important });
-					// Background shorthand resets background-color, including image-only declarations.
 					if (property === "background" && (important || !declarations.get("background-color")?.important)) declarations.set("background-color", { value: match[2]!.replace(/\s*!important\s*$/i, ""), important });
 				}
 				rules.push({ selector: name, declarations });
@@ -74,7 +63,6 @@ function themeFromCss(root: string, losses: Loss[]) {
 	const theme: Theme = {
 		accent: colour(value(".navigation", "background-color")),
 		text: colour(value("body", "color")),
-		// Content containers cover the outer body/page texture in published Adapt themes.
 		background: background("block", {}) ?? background("article", {}) ?? background("page", {}) ?? colour(value("body", "background-color")),
 		buttonBackground: colour(value(".button", "background-color")),
 		buttonText: colour(value(".button", "color")),
@@ -86,7 +74,6 @@ function themeFromCss(root: string, losses: Loss[]) {
 	return { theme: Object.values(theme).some((v) => v !== undefined) ? theme : undefined, background };
 }
 
-/** The build's content language: config `_defaultLanguage`, else the first language folder in name order. */
 function language(root: string): string {
 	const config = obj(JSON.parse(readFileSync(join(root, "course/config.json"), "utf8")));
 	const preferred = str(config._defaultLanguage);
@@ -96,12 +83,6 @@ function language(root: string): string {
 	return found;
 }
 
-/**
- * Adapt's displayed strings. `title` is an authoring label; `displayTitle` is
- * what learners see. Retry (`notFinal`) and partly-correct feedback are left
- * out: Studio has neither, and multi-select partly-correct text is reported
- * as a loss where it matters.
- */
 const TEXT_KEYS = new Set(["displayTitle", "body", "instruction", "text", "alt", "attribution", "backTitle", "backBody", "frontTitle", "correct", "final", "prefix", "suffix", "strapline", "inlineTranscriptBody"]);
 function inventory(node: unknown, out: string[]): void {
 	if (Array.isArray(node)) return node.forEach((n) => inventory(n, out));
@@ -129,8 +110,6 @@ export function extractAdapt(root: string): Course {
 	const losses: Loss[] = [];
 	const styling = themeFromCss(root, losses);
 	let theme = styling.theme;
-	// First use in display order wins each palette. Further source colours share
-	// a palette; class names alone never imply a colour without a matching rule.
 	const tone = (colour: string | undefined): "light" | "accent" | "dark" => {
 		if (!colour || colour === theme?.background) return "light";
 		const rgb = [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16));
@@ -172,7 +151,6 @@ export function extractAdapt(root: string): Course {
 		const items = arr(c._items);
 		const intro = [...heading(level, c.displayTitle), ...rich(c.body)];
 		if (text(str(c.instruction)) && !["mcq", "gmcq", "matching", "textinput"].includes(kind)) droppedInstructions++;
-		// A question's instruction stays visible as its description; `stem` in prax.ts splits it off.
 		const prompt = () => {
 			const instruction = line(str(c.instruction));
 			const stem = inline(str(c.body)) || line(str(c.displayTitle));
@@ -206,7 +184,6 @@ export function extractAdapt(root: string): Course {
 			case "matching":
 				return [...heading(level, c.displayTitle), { kind: "match", prompt: prompt(), pairs: items.map((i) => [line(str(i.text)), line(str(arr(i._options).find((o) => o._isCorrect === true)?.text))] as [string, string]), ...feedback(c) }];
 			case "textinput": {
-				// `_answers` is a list of accepted strings (or, with `_allowsAnyCase` etc., nested lists).
 				const accepted = (i: J) => (Array.isArray(i._answers) ? i._answers.flat().map(str).filter(Boolean) : []);
 				const parts = items.flatMap((i, n) => [`${n ? "\n" : ""}${text(str(i.prefix))} `.trimStart(), { answers: accepted(i) }, ` ${text(str(i.suffix))}`.trimEnd()]);
 				return [...heading(level, c.displayTitle), { kind: "fillBlank", prompt: prompt(), parts, ...feedback(c) }];
@@ -228,7 +205,6 @@ export function extractAdapt(root: string): Course {
 				const url = str(c._source);
 				if (/^(https?:)?\/\//.test(url)) {
 					const full = url.startsWith("//") ? `https:${url}` : url;
-					// Wrapper pages that pass the real player URL through (…?oriurl=https://youtube…).
 					const inner = /[?&](?:oriurl|url|src)=(https?[^&]+)/.exec(full)?.[1];
 					const target = inner ? decodeURIComponent(inner) : full;
 					const local = str(obj(c._media).mp4);
@@ -249,7 +225,6 @@ export function extractAdapt(root: string): Course {
 				visit(str(co._id), [...trail, title]);
 				continue;
 			}
-			// Headings nest under whichever of page, article and block actually have a visible title.
 			const pages: Page[] = [];
 			const pageTitle = heading(1, co.displayTitle || co.title);
 			const first: Block[] = [...pageTitle, ...rich(co.body)];
@@ -273,7 +248,6 @@ export function extractAdapt(root: string): Course {
 					content.push(...b.own, ...rich(block.body));
 					for (const c of childrenOf(str(block._id), components)) content.push(...component(c, Math.min(b.next, 4) as 1 | 2 | 3 | 4));
 				}
-				// An assessment article is Adapt's graded quiz: its questions submit together and pass at _scoreToPass.
 				const assessment = obj(article._assessment);
 				if (assessment._isEnabled === true) {
 					const pass = Number(assessment._scoreToPass);
@@ -297,7 +271,6 @@ export function extractAdapt(root: string): Course {
 	return {
 		tool: "adapt",
 		...(theme ? { theme } : {}),
-		// Builds often share `_id: "course"`, so the title keeps separate modules distinct.
 		sourceId: `${str(course._id)}\n${str(course.title)}`,
 		title: text(str(course.displayTitle)) || text(str(course.title)) || "Adapt course",
 		...(text(str(course.description)) ? { description: text(str(course.description)) } : {}),

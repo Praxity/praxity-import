@@ -19,7 +19,6 @@ function files(dir: string, entries: Record<string, string>) {
 type Obj = { html?: string; raw?: string; css?: string; cw?: string; data?: unknown };
 type PageSpec = { title: string; idx: number; next: string; decl: Array<[string, string]>; order: string[]; questions?: string; objects: Record<string, Obj> };
 
-/** One page in Lectora's published shape: the head script in pageN.html, the object literals in device_Desktop/pageN.js. */
 function page(id: string, p: PageSpec): Record<string, string> {
 	const html = `<!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -69,7 +68,6 @@ rcdObj.preload_Desktop = [];
 }
 
 const txt = (inner: string) => `<div name="dCon" style="position: absolute;"><div name="dCon2" class="ttxt">${inner}</div></div>`;
-/** A text object whose HTML splices a variable's value at runtime, as Lectora writes it. */
 const spliced = (before: string, variable: string, after: string) => `${JSON.stringify(txt(before).replace(/<\/div><\/div>$/, ""))} +  ${variable}.getValueForDisplay() + ${JSON.stringify(`${after}</div></div>`)}`;
 const action = (name: string, body: string) => `{type:6,on:2,delay:0,name:'${name}',actItem:function(){ ${body} }}`;
 const button = (label: string, actions: string[]) => ({
@@ -77,7 +75,6 @@ const button = (label: string, actions: string[]) => ({
 	cw: `{\n\t\t"name":\t"${label}",\n\t\t"arChld":\n\t[\n\t\t${actions.join(",\n\t\t")}\n\t]\n\t}`,
 	data: { a: [4, 33120, 0, [10, 10, 50, 20]], altValue: label, titleValue: label },
 });
-/** Template objects every page carries: the title text, a skip link and a logo. */
 const chromeDecl: Array<[string, string]> = [["text900", "jsWndText"], ["text901", "jsWndText"], ["image902", "jsWndImage"]];
 const chromeObjects: Record<string, Obj> = {
 	text900: { html: txt('<p><span>Acme Harbour</span></p>') },
@@ -106,7 +103,6 @@ function lectoraPackage(): string {
 		"_tobj9.txt": Buffer.from(testXml).toString("base64"),
 		"images/logo.png": "png",
 		"images/lion.png": "png",
-		// Welcome: page title from the variable, an h2, an image, a shape with text, a BEGIN button.
 		...page("page1", {
 			title: "START HERE",
 			idx: 1,
@@ -123,7 +119,6 @@ function lectoraPackage(): string {
 				text16: { html: txt("<p><span>“</span></p>"), data: { a: [0, 32, 0, []], bHideFromScrRdr: true } },
 			},
 		}),
-		// Click-to-reveal: a tab button shows hidden text; a list.
 		...page("page4", {
 			title: "REVEAL",
 			idx: 2,
@@ -138,7 +133,6 @@ function lectoraPackage(): string {
 				text44: { html: txt("<p><span>Visible after the tab</span></p>") },
 			},
 		}),
-		// Test page: multiple choice with radios and labels, hidden feedback swapped by actions.
 		...page("page2", {
 			title: "MULTIPLE CHOICE",
 			idx: 3,
@@ -159,7 +153,6 @@ function lectoraPackage(): string {
 				text28: { html: txt("<p><span>Great work!</span></p>"), css: "visibility: hidden; position: absolute;" },
 			},
 		}),
-		// Test page: fill in the blank.
 		...page("page3", {
 			title: "FILL IN THE BLANK",
 			idx: 4,
@@ -174,7 +167,6 @@ function lectoraPackage(): string {
 				entry33: { html: '<input type="text" maxlength="50" id="frmobj33" title="Entry field">' },
 			},
 		}),
-		// Knowledge check outside the test: a dropdown question and a score variable.
 		...page("page5", {
 			title: "PRACTICE ROUND",
 			idx: 5,
@@ -392,7 +384,6 @@ test("Lectora maps recorded heading sizes, columns and page width without rotati
 	}
 });
 
-/** Synthetic actions use the function/group/event forms in the bundled Lectora runtime. */
 function feedbackPackage(extra = "", correct = "action1_1", incorrect = "action1_2") {
 	const root = tmp();
 	files(root, {
@@ -481,9 +472,6 @@ test("Lectora retains shared reveals, literal messages and FIB feedback, and ref
 });
 
 test("Lectora orders recorded ordinal response values, preserving labels and rejecting incomplete keys", async () => {
-	// Runtime evidence: jsWndOrdinalQuestion reads arChoices[].val/btnnm and
-	// compares the resulting comma-joined values to arrAns[0]. Labels use the
-	// same txt references and select options as the published choice questions.
 	const root = tmp();
 	const spec: PageSpec = { title: "Ordering", idx: 1, next: "", decl: [["qu1", "jsWndOrdinalQuestion"], ["text2", "jsWndText"], ["combo3", "jsWndFormList"], ["combo4", "jsWndFormList"]], order: ["text2", "combo3", "combo4"], questions: 'qu1.arChld=[text2,combo3,combo4];qu1.arChoices=[{btnnm:"combo3",val:"a"},{btnnm:"combo4",val:"b"}];', objects: {
 		qu1: { cw: '{arrAns:["b,a"]}' }, text2: { html: "<p>Put the steps in order.</p>" },
@@ -542,7 +530,6 @@ action2=function(){og10.hide();og30.show();};`,
 
 test("Lectora imports exclusive button reveals as one practice choice using recorded names, order and feedback", async () => {
 	const { root, spec } = branchingPackage();
-	// Group names may be recorded in the publisher's declaration comments only.
 	spec.objects.og20!.cw = "{}";
 	spec.objects.og30!.cw = "{}";
 	const entries = page("page1", spec);
@@ -670,7 +657,6 @@ action1=function(){og30.issueActions(1001);};grpAction1=function(){og10.show();}
 
 test("Lectora maps chained panel reveals to an accordion in button and panel reading order", async () => {
 	const { root, spec } = revealPackage();
-	// Presentation actions are separate from the unconditional reveal chain.
 	spec.objects.button1 = button("Bearings", [action("State", "button3.setState('visited');"), action("Reveal", "action1();")]);
 	files(root, page("page1", spec));
 	const course = extractLectora(root);

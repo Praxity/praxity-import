@@ -58,3 +58,15 @@ attempts get `deckGate: attempt`, so they never demand a correct answer.
   positions, animations, drag-and-drop presentation, pop-up feedback,
   one-question-at-a-time quizzes, pie charts (shown as bar charts), quote
   avatars, hotspot region shapes (points at each region's centre).
+
+## Ownership and ordering
+
+`src/extract/hero.ts` owns `promoteHero`, `slideLayout` and `pictureLayout`.
+Callers remove vendor chrome and invisible objects before supplying candidates;
+the shared layout pass only operates on blocks still emitted. Drawing order
+and reading order are independent: hero selection uses recorded drawing order,
+while columns keep text in reading order.
+
+Source: comments and implementations in `src/extract/hero.ts` at commit
+`b47d3a416c2512e48b77877c7798ecfb1d6400ae`, with `test/layout.test.ts` and
+`test/storyline.test.ts` as executable examples.

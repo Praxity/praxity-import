@@ -6,13 +6,11 @@ import type { Block, Course, Item, Lesson, Loss, Page } from "../model.ts";
 import { walk } from "../write.ts";
 import { extractStoryline } from "./storyline.ts";
 
-/* Rise JSON is untyped vendor data; these readers narrow it field by field. */
 type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const arr = (v: unknown): J[] => (Array.isArray(v) ? v.map(obj) : []);
 const str = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 
-/** Base64 course JSON, from whichever of Rise's three export layouts is present. */
 function loadCourse(root: string, dir: string): J {
 	const file = (f: string) => join(root, dir, f);
 	const index = existsSync(file("index.html")) ? readFileSync(file("index.html"), "utf8") : "";
@@ -32,14 +30,12 @@ function loadCourse(root: string, dir: string): J {
 				const data = obj(JSON.parse(Buffer.from(b64, "base64").toString("utf8")));
 				if (obj(data.course).lessons) return data;
 			} catch {
-				/* not the course payload; try the next literal */
 			}
 		}
 	}
 	throw new Error("Rise package found, but its course data could not be decoded");
 }
 
-/** Visible strings in a Rise node, for coverage. Skips hidden items and UI-chrome fields. */
 const TEXT_KEYS = new Set(["title", "heading", "paragraph", "description", "caption", "name", "feedback", "feedbackCorrect", "feedbackIncorrect", "matchTitle", "alt", "label", "text"]);
 function inventory(node: unknown, out: string[], family = ""): void {
 	if (Array.isArray(node)) return node.forEach((n) => inventory(n, out, family));
@@ -61,7 +57,6 @@ export function extractRise(root: string, dir: string): Course {
 	const losses: Loss[] = [];
 	const assetDir = posix.join(dir, "assets");
 
-	/** First of a media record's names that exists under assets/, trying each raw and URL-decoded. */
 	const local = (f: J, keys: string[]): string | undefined => {
 		const names = keys
 			.map((k) => str(f[k]))
@@ -120,7 +115,6 @@ export function extractRise(root: string, dir: string): Course {
 	const ctx = { base: dir };
 	const rich = (html: unknown) => htmlBlocks(str(html), ctx);
 
-	/** One Rise block, as prax blocks. `at` locates losses. */
 	const convert = (b: J, at: string): Block[] => {
 		const type = str(b.type);
 		const variant = str(b.variant);
@@ -147,7 +141,6 @@ export function extractRise(root: string, dir: string): Course {
 					const speaker = text(str(i.name));
 					const centered = ["a", "b", "c", "d", "centered", "centred", "avatar"].includes(variant);
 					const style = variant === "background" ? "shaded" : centered ? "none" : undefined;
-					// Studio's smallest image is far larger than Rise's round speaker avatar, so the avatar is left out.
 					if (Object.keys(obj(obj(i.avatar).media)).length) lose("dropped", "quote speaker avatar not shown; the speaker name is kept");
 					if (variant === "background" && Object.keys(obj(obj(i.background).media)).length) lose("approximated", "quote background image replaced by a shaded quote");
 					return [...(q ? [{ kind: "quote", text: q, ...(speaker ? { speaker } : {}), ...(style ? { style } : {}) } as Block] : [])];
@@ -158,7 +151,6 @@ export function extractRise(root: string, dir: string): Course {
 				return listItems.length ? [{ kind: "list", ordered: variant === "numbered", items: listItems }] : [];
 			}
 			case "image": {
-				// Rise's image blocks are layouts: full-bleed hero/full, a centred image, or an image beside text.
 				const layout: "full" | "large" | undefined = variant === "full" || variant === "hero" ? "full" : variant === "centered" ? "large" : undefined;
 				return items.flatMap((i) => {
 					const pics = mediaBlocks(i.media, str(i.caption)).map((m) => (m.kind === "image" ? { ...m, ...(layout ? { layout } : variant === "text aside" ? { layout: "medium" as const } : {}) } : m));
@@ -176,7 +168,6 @@ export function extractRise(root: string, dir: string): Course {
 			case "divider":
 				return [{ kind: "divider" }];
 			case "chart": {
-				// Rise charts are one labelled series; Studio draws bar and line charts from a two-column table.
 				const rows = items.map((i) => [line(str(i.type)), neutralize(str(i.value))]);
 				if (!rows.length) return [];
 				if (variant !== "bar" && variant !== "line") lose("approximated", `${variant || "unknown"} chart shown as a bar chart; its colours are not kept`);
@@ -198,7 +189,6 @@ export function extractRise(root: string, dir: string): Course {
 		return rows.length ? [{ kind: "table", rows }] : [];
 	};
 
-	/** Rise keeps a default image on text-only card faces; only image faces show it. */
 	const face = (f: unknown): Block[] => {
 		const o = obj(f);
 		const showsMedia = /image/i.test(str(o.type)) || (!str(o.type) && !text(str(o.description)));
@@ -208,7 +198,6 @@ export function extractRise(root: string, dir: string): Course {
 	const itemBlocks = (i: J): Block[] => [...mediaBlocks(i.media), ...rich(i.description ?? i.paragraph)];
 
 	const interactive = (b: J, at: string, lose: (e: Loss["effect"], d: string) => void): Block[] => {
-		// Rise spells some variants with and without spaces across versions ("labeled graphic", "labeledgraphic").
 		const variant = str(b.variant).replace(/\s+/g, "");
 		const items = arr(b.items).filter((i) => i.isHidden !== true);
 		switch (str(b.family) === "flashcard" ? "flashcard" : variant) {
@@ -217,10 +206,8 @@ export function extractRise(root: string, dir: string): Course {
 				return [{ kind: "container", as: variant === "tabs" ? "tab" : "accordion", items: items.map((i) => ({ title: line(str(i.title)) || "Untitled", blocks: itemBlocks(i) })) }];
 			case "process":
 			case "timeline": {
-				// Rise shows a process's introduction first and its summary last, whatever the stored order.
 				const rank = (i: J) => (str(i.type) === "intro" ? 0 : str(i.type) === "summary" ? 2 : 1);
 				const steps: Item[] = [...items].sort((a, b) => rank(a) - rank(b)).map((i, n) => ({ title: [line(str(i.date)), line(str(i.title))].filter(Boolean).join(": ") || `Step ${n + 1}`, blocks: itemBlocks(i) }));
-				// A process is a carousel of step cards in Rise; Studio's slide-layout cards are the closest match.
 				if (variant === "process") return [{ kind: "cards", items: steps.map((s) => ({ title: s.title, front: s.blocks, back: [] })) }];
 				return [{ kind: "container", as: "sequence", items: steps }];
 			}
@@ -257,7 +244,6 @@ export function extractRise(root: string, dir: string): Course {
 					return /^(https?:|mailto:)/.test(url) && label ? [...desc, { kind: "paragraph", text: `[${label.replace(/[[\]]/g, "")}](${url.replace(/[()\s]/g, encodeURIComponent)})` } as Block] : desc;
 				});
 			case "storyline": {
-				// Reached only when the story is not in the package; see `embedded`.
 				const story = obj(obj(obj(items[0]).media).storyline);
 				lose("dropped", `embedded Storyline interaction "${str(story.title)}" is not in the package (${str(story.src)})`);
 				return [];
@@ -303,10 +289,6 @@ export function extractRise(root: string, dir: string): Course {
 		}
 	};
 
-	/**
-	 * A Storyline interaction embedded in a Rise lesson, when its published
-	 * story ships in the package: its slides become pages at the block's place.
-	 */
 	const embeddedText: string[] = [];
 	const embedded = (b: J, at: string): Page[] | undefined => {
 		if (str(b.variant) !== "storyline") return undefined;
@@ -331,7 +313,6 @@ export function extractRise(root: string, dir: string): Course {
 	};
 
 	const lessons: Lesson[] = [];
-	// Rise records the course title over its cover image; descriptions retain their block structure.
 	const coverTheme = obj(course.theme);
 	if (coverTheme.hideCoverPage !== true) {
 		const cover = mediaBlocks(obj(course.coverImage).media);
@@ -353,15 +334,11 @@ export function extractRise(root: string, dir: string): Course {
 		if (str(l.type) === "quiz") {
 			const settings = obj(l.settings);
 			const pass = Number(str(settings.passingScore));
-			// Studio's exported groups ignore quiz-order shuffle and quiz attempts, even though inspect preserves them.
-			// requireAll only requires answers before submission; deckGate only governs slide decks.
-			// Zero retries already matches Studio's single submission; Rise uses -1 for unlimited retries.
 			const unsupported = [settings.randomizeQuestionOrder === true && "random question order", Number(settings.retryCount) === -1 && "unlimited quiz retries", Number(settings.retryCount) > 0 && `a limit of ${str(settings.retryCount)} retries`, settings.passToContinue === true && "passing to continue"].filter(Boolean);
 			if (unsupported.length) losses.push({ at, source: "rise:quiz", effect: "approximated", detail: `quiz settings not carried over: ${unsupported.join(", ")}` });
 			const members = [...rich(l.description), ...itemsList.flatMap((q) => question(q, `${at}/${str(q.id)}`))];
 			pages[0] = { blocks: [{ kind: "group", title: line(str(l.title)) || neutralize(title), ...(str(settings.passingScore) !== "" && Number.isFinite(pass) ? { passingScore: pass } : {}), ...(settings.shuffleAnswerChoices === true ? { shuffle: true } : {}), blocks: members }] };
 		} else {
-			// Rise colours whole blocks (accent, tint, dark); runs of the same colour become one Studio section band.
 			let band: "light" | "dark" | "accent" | "cool" = "light";
 			for (const b of itemsList) {
 				const story = embedded(b, `${at}/${str(b.id)}`);
@@ -371,7 +348,6 @@ export function extractRise(root: string, dir: string): Course {
 					continue;
 				}
 				const out = convert(b, `${at}/${str(b.id)}`);
-				// A Rise "continue" divider gates the rest of the lesson: the nearest Studio construct is a new page.
 				if (str(b.type) === "divider" && str(b.variant) === "continue") {
 					pages.push({ blocks: [] });
 					band = "light";
@@ -405,7 +381,6 @@ export function extractRise(root: string, dir: string): Course {
 	return {
 		tool: "rise",
 		theme: {
-			// Rise always sets lesson content on white.
 			background: "#ffffff",
 			density: "comfortable",
 			...(typeof theme.contentWidth === "number" && Number.isFinite(theme.contentWidth) && theme.contentWidth > 0 ? { contentWidth: theme.contentWidth } : {}),
