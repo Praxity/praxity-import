@@ -28,7 +28,9 @@ audited runtime files, while the installed agent skill has its own file boundary
   under Windows cmd as well as POSIX shells. It sets TMPDIR and TEMP/TMP to
   the test output directory because os.tmpdir reads different variables on
   the two platforms.
-- In `test/package.test.ts` and `test/skill.test.ts`, installation checks treat
+- The installation checks "skill links resolve inside the installed skill
+  folder" (`test/skill.test.ts`) and "package follows skill reference links and
+  refuses links to private or external files" (`test/package.test.ts`) treat
   `skill/` as the whole Rubato-installed unit. Relative links must resolve
   inside it; references to external project documentation use public URLs.
 
