@@ -8,7 +8,8 @@ Canonical attribution: **Praxity Import by Ariel Harlap**
 
 Project: <https://github.com/Praxity/praxity-import>
 
-Praxity Import by Ariel Harlap. Source-available under the PolyForm Perimeter License 1.0.1: free at home and at work, including paid client work. See [LICENSING.md](LICENSING.md).
+Praxity-authored code in Praxity Import by Ariel Harlap is available under the
+[MIT licence](LICENSE). See [LICENSING.md](LICENSING.md).
 
 `src/input.ts` is adapted from Praxity Check (<https://github.com/Praxity/praxity-check>),
 by the same author, who licenses it here under Praxity Import's terms.
@@ -21,13 +22,6 @@ Check's `test/input.test.ts`.
 
 External code contributions are not accepted during the public alpha. Git
 metadata alone is not used to infer copyright ownership or contributor credit.
-
-## Licence text
-
-The licence includes the unmodified
-[PolyForm Perimeter License 1.0.1](https://polyformproject.org/licenses/perimeter/1.0.1),
-copyright PolyForm Project Inc. The PolyForm Project separately permits reuse
-of its licence texts.
 
 ## Trademarks and non-affiliation
 

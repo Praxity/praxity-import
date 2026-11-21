@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"description": "Import SCORM packages from other authoring tools into Praxity Studio .prax courses",
-	"license": "SEE LICENSE IN LICENSE",
+	"license": "MIT",
 	"author": "Ariel Harlap",
 	"bin": {
 		"praxity-import": "src/cli.ts"

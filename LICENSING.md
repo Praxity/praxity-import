@@ -1,32 +1,15 @@
 # Praxity Import licensing
 
-Praxity Import is source-available under the unmodified
-[PolyForm Perimeter License 1.0.1](https://polyformproject.org/licenses/perimeter/1.0.1).
-The `LICENSE` file is authoritative. This page explains it in everyday language.
+Praxity-authored code in Praxity Import is available under the [MIT licence](LICENSE).
+You may use, change, distribute and sell it, including in commercial products.
+Keep the copyright and permission notices with copies or substantial portions
+of the software.
 
-## Free to use
+Earlier versions of this repository published under earlier Praxity terms are also
+available under the MIT licence from 2026-11-21.
 
-Use and change Praxity Import without charge, at home and at work. That includes
-personal projects, teaching and research, nonprofit and government work,
-internal use at any company, and paid client work where Praxity Import is one of the
-tools you use to do the job.
-
-## What the licence rules out
-
-You may not use Praxity Import to provide others with a product that competes with it.
-The licence's test is whether a product, which can be a good or a service, is
-marketed as a substitute for what Praxity Import does. Selling, hosting, repackaging or
-white-labelling Praxity Import falls in that category, and so does a service sold
-mainly as Praxity Import's function.
-
-If your business adds its own work on top, such as course design, content or
-training, you don't need to ask. If it mainly resells what Praxity Import does, talk to
-me first. I'm glad to work together when improvements and test results flow
-back into Praxity Import.
-
-Want to embed Praxity Import in your product or service, or run a free public fork or
-service? Contact me at [hello@arielharlap.com](mailto:hello@arielharlap.com).
-I usually say yes to free public projects.
+Third-party components retain their own licences. See
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Attribution and trademarks
 
