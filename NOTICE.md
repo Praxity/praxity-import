@@ -12,6 +12,8 @@ Praxity Import by Ariel Harlap. Source-available under the PolyForm Perimeter Li
 
 `src/input.ts` is adapted from Praxity Check (<https://github.com/Praxity/praxity-check>),
 by the same author, who licenses it here under Praxity Import's terms.
+Archive-safety cases in `test/input.test.ts` are also adapted from Praxity
+Check's `test/input.test.ts`.
 
 ## Contributors
 
@@ -54,7 +56,7 @@ Full licence texts are in `THIRD-PARTY-NOTICES.md`.
 - `pend` 1.2.0 (used by yauzl) — MIT; Copyright (c) 2014 Andrew Kelley.
 
 Development dependencies are not distributed with Praxity Import:
-TypeScript 7.0.2 and its platform compiler packages
+TypeScript 6.0.3 (the `typescript-api` alias), TypeScript 7.0.2 and its platform compiler packages
 (`@typescript/typescript-<platform>`) under Apache-2.0, each with its own
 `NOTICE.txt` of bundled third-party terms; `@types/node`, `@types/yauzl` and
 `undici-types` under MIT. The release lockfile is the authoritative version

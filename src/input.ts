@@ -1,5 +1,3 @@
-// Adapted from Praxity Check's src/input.ts by the same author and licensed under this
-// repository's terms (see NOTICE.md). Keep security fixes in sync with Check.
 import { createWriteStream, lstatSync, realpathSync } from "node:fs";
 import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,34 +5,21 @@ import { dirname, isAbsolute, join, posix, resolve, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
 import yauzl from "yauzl";
 
-/**
- * Adapted from Praxity Check's src/input.ts. Extraction limits are a security
- * boundary for untrusted archives, not tuning knobs.
- */
-// Video-heavy courses can legitimately exceed 512MB unpacked. The ratio check
-// below is what actually defends against a bomb; this cap only bounds disk use.
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024 * 1024;
 const MAX_ENTRIES = 20_000;
 const MAX_RATIO = 100;
 
-/**
- * Injectable so the bomb tests can assert the caps with a small fixture. Proving
- * the 4GiB cap otherwise needs a 4GiB fixture, and a test too expensive to run
- * is a test that stops being run.
- */
 export interface Limits {
 	maxTotalBytes?: number;
 	maxEntries?: number;
 	maxRatio?: number;
 }
-/** Below this, a high ratio is normal (a 40-byte file of zeroes compresses hard). */
 const RATIO_FLOOR_BYTES = 1024 * 1024;
 
 const S_IFMT = 0xf000;
 const S_IFLNK = 0xa000;
 
 export interface Input {
-	/** Directory to serve. For a zip, a temp dir; for a folder, the folder itself. */
 	root: string;
 	wasZip: boolean;
 	cleanup: () => Promise<void>;
@@ -42,13 +27,6 @@ export interface Input {
 
 export class UnsafeArchiveError extends Error {}
 
-/**
- * yauzl validates entry names and declared sizes itself and rejects with a plain
- * Error before our own guards ever see the entry. The archive is still refused,
- * but the caller cannot tell "malicious" from "corrupt" — so the ones that mean
- * an attack get relabelled. Our guards below stay in place for what yauzl does
- * not cover: symlinks, entry count, ratio, and real expanded bytes.
- */
 const YAUZL_UNSAFE = /invalid relative path|absolute path|too many bytes in the stream|invalid characters in fileName/i;
 
 function asUnsafe(err: unknown): Error {
@@ -57,11 +35,6 @@ function asUnsafe(err: unknown): Error {
 	return YAUZL_UNSAFE.test(message) ? new UnsafeArchiveError(message) : (err as Error);
 }
 
-/**
- * Reject before extracting, not after. A path is safe only if it resolves inside
- * the destination -- checking for ".." misses symlink chains and absolute paths
- * on the other platform's separator.
- */
 function safeEntryPath(root: string, fileName: string): string {
 	if (isAbsolute(fileName) || /^[a-zA-Z]:/.test(fileName)) {
 		throw new UnsafeArchiveError(`archive entry has an absolute path: ${fileName}`);
@@ -119,8 +92,6 @@ async function extractZip(zipPath: string, root: string, limits: Limits = {}): P
 						return;
 					}
 
-					// The declared size is attacker-controlled, so it gates cheaply here and
-					// the real byte count below is what actually enforces the cap.
 					if (
 						entry.uncompressedSize > RATIO_FLOOR_BYTES &&
 						entry.uncompressedSize / Math.max(entry.compressedSize, 1) > maxRatio
@@ -179,11 +150,6 @@ export async function openInput(inputPath: string, limits: Limits = {}): Promise
 	};
 }
 
-/**
- * The absolute path of a package-relative file, or undefined unless it is a
- * regular file that really lives inside the package. Paths come from vendor
- * data, so `..`, absolute paths and symlinks out of the package are refused.
- */
 export function insidePackage(root: string, rel: string): string | undefined {
 	const clean = posix.normalize(rel.split("\\").join("/"));
 	if (isAbsolute(clean) || /^[a-zA-Z]:/.test(clean) || clean === ".." || clean.startsWith("../")) return undefined;

@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { verify } from "../src/verify.ts";
 
-/** A stand-in Studio CLI that reports `version` and accepts any project. */
 function fakeStudio(version: string): string {
 	const file = join(mkdtempSync(join(tmpdir(), "praxity-import-fake-studio-")), "praxity.mjs");
 	writeFileSync(

@@ -34,7 +34,6 @@ test("HLS playlists that name files outside the package, remote or absolute addr
 	assert.equal(typeof hlsSource(root, "v.hls/main.m3u8"), "string", "a tag URI is checked too");
 });
 
-/** A Rise package whose only block is a video at `key`. */
 function riseVideo(key: string): string {
 	const root = tmp();
 	mkdirSync(join(root, "lib/rise"), { recursive: true });

@@ -43,7 +43,6 @@ export type Report = {
 	lessons: Written["lessons"];
 	assets: number;
 	passingScore?: number;
-	/** The ffmpeg that converted media under --convert-media; output is byte-identical for one version. */
 	mediaConverter?: string;
 	losses: Written["losses"];
 	verification?: Verification;
@@ -64,9 +63,7 @@ export async function importPackage(input: string, output: string, opts: { verif
 		const extract = EXTRACTORS[found.tool];
 		if (!extract) throw new ImportError("unsupported_tool", `Detected ${found.tool} output (${found.evidence.join(", ")}), which is not supported yet`);
 		const course = extract(root, found);
-		// Presentation follows the tool: slide players become guided slides, scrolling tools stay pages.
 		course.theme = { ...course.theme, format: course.theme?.format ?? (SLIDE_TOOLS.has(found.tool) ? "slides" : "pages") };
-		// The manifest's mastery score is what the original package told the LMS; it outranks a quiz's own setting.
 		const mastery = readManifest(root)?.masteryScore;
 		if (mastery !== undefined) {
 			const quizMarks = [...new Set(course.lessons.flatMap((l) => l.pages.flatMap((p) => [...walk(p.blocks)])).flatMap((b) => (b.kind === "group" && b.passingScore !== undefined ? [b.passingScore] : [])))];

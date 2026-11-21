@@ -15,7 +15,8 @@
 		"test": "node scripts/test.ts",
 		"corpus": "node scripts/fetch-corpus.ts",
 		"bench": "node scripts/bench.ts",
-		"verify": "pnpm typecheck && pnpm test"
+		"verify": "pnpm lint && pnpm typecheck && pnpm test",
+		"lint": "node scripts/check-comments.mjs"
 	},
 	"engines": {
 		"node": ">=24.18"
@@ -24,7 +25,8 @@
 	"devDependencies": {
 		"@types/node": "^24.13.6",
 		"@types/yauzl": "^2.10.3",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"typescript-api": "npm:typescript@6.0.3"
 	},
 	"dependencies": {
 		"parse5": "8.0.1",

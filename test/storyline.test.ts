@@ -39,7 +39,6 @@ test("player theme uses explicit accent, visible logo and character-weighted tex
 	assert.equal(unsafe.losses.filter((l) => l.source === "storyline:theme").length, 1);
 });
 
-/** Storyline's data files: JSON wrapped in a single-quoted JS string literal. */
 const provide = (name: string, data: unknown) => `window.globalProvideData('${name}', '${JSON.stringify(data).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}');`;
 
 const span = (text: string, style: Record<string, unknown> = {}) => ({ text, style });
@@ -123,7 +122,6 @@ function storylinePackage(): string {
 				kind: "slidelayer",
 				isBaseLayer: true,
 				objects: [
-					// Source order is body first; tab order (focus order) puts the heading first.
 					textObj("body", 2, [
 						para([span("Wear "), span("gloves", { fontIsBold: true }), span(" at work.\n")]),
 						para([span("one\n")], { listStyle: { listType: "bullet" } }),
@@ -310,7 +308,6 @@ test("variable references remain readable in spans, HTML and glyph-only text, wi
 	assert.ok(result.report.losses.some((l) => l.source === "storyline:variable" && l.effect === "approximated" && /kept as source text in 4 text object\(s\)/.test(l.detail)));
 });
 
-/** Entirely synthetic interaction data; real package content stays out of fixtures. */
 function questionPackage(interaction: Record<string, unknown>, objects: unknown[] = []): string {
 	const dir = tmp();
 	mkdirSync(join(dir, "html5/data/js"), { recursive: true });
@@ -440,7 +437,6 @@ test("matching and word-bank labels also use referenced object text", async () =
 test("feedback uses final attempt branches and drops marked titles and a short top line above the message", async () => {
 	const interaction = { id: "quiz", type: "multiplechoice", lmstext: "Pick a material", choices: [{ id: "a", lmstext: "Wool" }, { id: "b", lmstext: "Tin" }], answers: [
 		{ ...answer([{ kind: "equals", choiceid: "choices.a" }]), actions: [attemptAction("lte", 3, "ok")] },
-		// Final first: source ordering must not decide which feedback is final.
 		{ status: "incorrect", evaluate: { statements: [{ kind: "other" }] }, actions: [attemptAction("gte", 3, "no"), attemptAction("lt", 3, "retry")] },
 	] };
 	const dir = questionPackage(interaction);
@@ -464,7 +460,6 @@ test("feedback uses final attempt branches and drops marked titles and a short t
 	assert.doesNotMatch(result.prax, /Réussi|Outcome|Result|Select again/);
 	assert.ok(result.report.losses.some((l) => l.source === "storyline:feedback" && l.effect === "approximated" && /1 retry layer/.test(l.detail)));
 	assert.ok(result.course.sourceText.includes("Select again."), "inventory retains omitted retry text");
-	// The same retry/final decision expressed with an else branch.
 	interaction.answers[1]!.actions = [{ ...attemptAction("lt", 3, "retry"), elseActions: attemptAction("gte", 3, "no").thenActions } as ReturnType<typeof attemptAction>];
 	const dataFile = join(dir, "html5/data/js/data.js");
 	const data = provided(dataFile) as { scenes: Array<{ slides: Array<{ interactions: unknown[] }> }> };
@@ -474,7 +469,6 @@ test("feedback uses final attempt branches and drops marked titles and a short t
 	assert.doesNotMatch(branches.prax, /Select again/);
 	assert.match(branches.prax, /incorrect: Review the material\./);
 	assert.ok(branches.report.losses.some((l) => /3 correct feedback layer title/.test(l.detail)), "marked titles beside a message are counted");
-	// A heading-marked object that is the layer's only text is the message itself.
 	(slide.slideLayers as unknown[])[2] = { id: "no", objects: [textObj("only", 0, [para([span("Disconnect the supply first.")])], { role: "heading" })] };
 	writeFileSync(file, provide("slide", slide));
 	assert.match((await importQuestion(dir)).prax, /incorrect: Disconnect the supply first\./);

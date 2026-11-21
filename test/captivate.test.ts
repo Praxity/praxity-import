@@ -15,7 +15,6 @@ function files(dir: string, entries: Record<string, string>) {
 	}
 }
 
-/** Synthetic question data only. Real package text never belongs in fixtures. */
 function questionPackage(q: Record<string, unknown>, objects: Record<string, Record<string, unknown>> = {}, extra: Record<string, unknown> = {}): string {
 	const dir = tmp();
 	const model = {
@@ -27,7 +26,6 @@ function questionPackage(q: Record<string, unknown>, objects: Record<string, Rec
 	return dir;
 }
 
-/** Captivate 2017/2019 layout: text rendered to PNG, words in `accstr`, one flat model in CPM.js. */
 function classicPackage(): string {
 	const dir = tmp();
 	const model = `{pref:{acc:0},
@@ -56,7 +54,6 @@ project:{pN:'Valves 101'},project_main:{slides:'Slide1,Slide2',slideAudios:'StAd
 	return dir;
 }
 
-/** Captivate 12+ layout: Draft.js text, a11y props, nested containers, a question pool. */
 function modernPackage(): string {
 	const dir = tmp();
 	const text = (blocks: unknown[]) => JSON.stringify({ blocks });
@@ -603,10 +600,10 @@ test("Captivate reads fixed rows left to right within 10px of an anchored centre
 	const root = tmp();
 	const captions = [
 		{ name: "Right", b: [300, 90, 500, 160] },
-		{ name: "Left", b: [10, 118, 100, 148] }, // Centres differ by 8px despite different heights.
-		{ name: "Next", b: [0, 136, 100, 146] }, // 8px from Left, 16px from the row anchor.
+		{ name: "Left", b: [10, 118, 100, 148] },
+		{ name: "Next", b: [0, 136, 100, 146] },
 		{ name: "BoundaryRight", b: [300, 180, 500, 200] },
-		{ name: "BoundaryLeft", b: [10, 190, 100, 210] }, // Exactly 10px joins the row.
+		{ name: "BoundaryLeft", b: [10, 190, 100, 210] },
 		{ name: "Separate", b: [0, 201, 100, 221] },
 		{ name: "TieFirst", b: [20, 251, 100, 271] },
 		{ name: "TieSecond", b: [20, 250, 100, 270] },

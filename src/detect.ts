@@ -8,19 +8,13 @@ export type Tool = "rise" | "storyline" | "captivate" | "adapt" | "ispring" | "l
 
 export type Detected = {
 	tool: Tool;
-	/** Directory holding the tool's output, relative to the package root ("" for the root). */
 	dir: string;
-	/** Why: the marker files that matched, so a wrong guess is easy to see. */
 	evidence: string[];
 };
 
 const has = (root: string, rel: string) => existsSync(join(root, rel));
 const read = (root: string, rel: string) => (has(root, rel) ? readFileSync(join(root, rel), "utf8") : "");
 
-/**
- * A zip often wraps the package in one top-level folder. Descend through lone
- * directories until something package-like appears.
- */
 export function packageRoot(root: string): string {
 	let dir = root;
 	for (let i = 0; i < 4; i++) {
@@ -33,10 +27,6 @@ export function packageRoot(root: string): string {
 	return dir;
 }
 
-/**
- * Ordered fingerprints: the first match wins. Each checks files the tool's
- * player needs to run, not names or comments an author can edit.
- */
 export function detect(root: string): Detected {
 	for (const dir of ["", "scormcontent", "content", "res"]) {
 		const html = read(root, join(dir, "index.html"));

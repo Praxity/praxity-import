@@ -46,3 +46,15 @@ Studio parses back.
 - A later, optional LLM pass could improve structure (for example, choosing
   headings on a slide), but only as a separate step whose output is diffable
   against the deterministic import.
+
+## Detection and fallback details
+
+In `src/detect.ts`, `detect` checks ordered fingerprints made from files the
+player needs, rather than editable author labels or comments. First match wins.
+In `src/extract/html.ts`, `MAX_PAGES` bounds link traversal at 2,000 pages to
+avoid link farms; exceeding it is reported rather than silently truncating.
+`extractHtml` derives identity from content when no manifest supplies one, so
+unrelated packages do not share a default identifier.
+
+Source: comments and implementations of these symbols at commit
+`b47d3a416c2512e48b77877c7798ecfb1d6400ae`.

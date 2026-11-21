@@ -44,7 +44,6 @@ test("player palette, shown logo, outline and character-weighted slide fonts map
 	assert.deepEqual(extractIspring(root, "").theme, { density: "compact", blockSpacing: "compact" });
 });
 
-/** iSpring's slide files hand the player an HTML string in a single-quoted JS literal. */
 const slideJs = (html: string) => `(function(){var loadHandler=window['sl_{G}'];loadHandler&&loadHandler(0, '${html.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}', '{"s":[]}');})();`;
 const rt = (a: string) => ({ h: `<p style="font-size:16px">${a.replace(/^<p>|<\/p>$/g, "")}</p>`, a, r: [], d: [] });
 const feedback = { F: { c: { v: rt("<p>Right!</p>") }, i: { v: rt("<p>Nope.</p>") }, a: { v: rt("<p>Thanks.</p>") } } };
@@ -55,7 +54,6 @@ function ispringPackage(questions?: unknown[]): string {
 	writeFileSync(join(dir, "imsmanifest.xml"), `<?xml version="1.0"?><manifest identifier="m1"><organizations default="o"><organization identifier="o"><title>Safety &amp; you</title><item identifier="i" identifierref="r"><title>Safety &amp; you</title></item></organization></organizations><resources><resource identifier="r" type="webcontent" href="res/index.html"><file href="res/index.html"/></resource></resources></manifest>`);
 	for (const f of ["img0.png", "img1.png", "img2.png", "narr.mp3", "quiz1/images/helmet.png"]) writeFileSync(join(dir, "res/data", f), f);
 
-	// Slide 1: layout layer with a background, then the slide's own shapes. Spans wrap mid-word; `x` carries the text.
 	writeFileSync(
 		join(dir, "res/data/slide1.js"),
 		slideJs(
@@ -65,7 +63,6 @@ function ispringPackage(questions?: unknown[]): string {
 				`<div id="spr5"><div style="width:0px;"><span id="t1">Wear glo</span></div><div style="width:0px;"><span id="t2">ves *now*.</span></div><div style="width:0px;"><span id="t3">Check twice.</span></div></div></div></div>`,
 		),
 	);
-	// Slide 2: text rendered as glyph paths (no line boxes), so text and pictures cannot be interleaved.
 	writeFileSync(
 		join(dir, "res/data/slide2.js"),
 		slideJs(`<div id="spr0"><div id="spr1" class="kern slide"><div id="svg0"><svg width="10" height="10"><path d="M0,0 h1"/></svg></div><div id="spr2"><img id="i2" src="data/img2.png" width="50" height="50" alt="Exit"/></div></div></div>`),

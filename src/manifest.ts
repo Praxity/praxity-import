@@ -7,16 +7,12 @@ export type ManifestItem = { id: string; title: string; href?: string; depth: nu
 export type Manifest = {
 	identifier: string;
 	title: string;
-	/** "1.2", "2004 3rd Edition", "CAM 1.3" … as declared, or "unknown". */
 	version: string;
 	items: ManifestItem[];
-	/** Every file the manifest lists, for detection. */
 	files: string[];
-	/** The LMS pass mark in percent: SCORM 1.2 masteryscore or SCORM 2004 minNormalizedMeasure. */
 	masteryScore?: number;
 };
 
-/** Resolve an href against a base, dropping query/hash. */
 const at = (base: string, href: string) => posix.normalize(posix.join(base, decodeURIComponent(href.split(/[?#]/)[0] ?? "")));
 
 export function readManifest(root: string): Manifest | undefined {
@@ -51,7 +47,6 @@ export function readManifest(root: string): Manifest | undefined {
 	const version = textOf(find(manifest, "schemaversion")[0]) || "unknown";
 	const title = textOf(org && kids(org, "title")[0]) || textOf(find(manifest, "title")[0]) || textOf(find(manifest, "langstring")[0]);
 	const mastery12 = Number(textOf(find(manifest, "masteryscore")[0]));
-	// A SCORM 2004 measure only decides success when the primary objective is satisfied by measure.
 	const primary = find(manifest, "primaryobjective").find((o) => o.attrs.satisfiedByMeasure === "true");
 	const measure = primary && find(primary, "minnormalizedmeasure")[0];
 	const mastery2004 = Number(textOf(measure) || measure?.attrs.minNormalizedMeasure) * 100;

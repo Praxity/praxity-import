@@ -7,14 +7,6 @@ import { type Blank, type Block, type Course, type Inline, type Item, type Lesso
 import { find, kids, parseXml, textOf } from "../xml.ts";
 import { type Box, type HeroItem, slideLayout } from "./hero.ts";
 
-/*
- * Storyline HTML5 output: html5/data/js/data.js carries the scene/slide tree
- * and each slide's html5url points at its own data file. Every file is
- * `globalProvideData('<name>', '<JSON as a JS string literal>')`. Text lives in
- * object.textLib[].vartext (blocks of styled spans; an HTML string in older
- * versions; only glyph paths in 3.40-era output, where altText is the copy).
- * Quiz definitions are `interactions` on the slide entry in data.js.
- */
 type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const arr = (v: unknown): J[] => (Array.isArray(v) ? v.map(obj) : []);
@@ -23,7 +15,6 @@ const num = (v: unknown): number => (typeof v === "number" ? v : Number.NaN);
 
 const ESCAPES: Record<string, string> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" };
 
-/** Decode one `globalProvideData` file: unescape the JS string literal, then parse its JSON. */
 export function provided(file: string): J {
 	const src = readFileSync(file, "utf8");
 	const m = /globalProvideData\('\w+',\s*'([\s\S]*)'\s*\)\s*;?\s*$/.exec(src);
@@ -35,35 +26,25 @@ export function provided(file: string): J {
 }
 
 const HAS_VAR = /%[\w.$-]+%/;
-// Keep unresolved %name% references verbatim; Storyline encodes a literal percent as ^%^.
 const literalText = (s: string) => s.replace(/\^%\^/g, "%");
-/** Generic labels Storyline gives freeform interactions; the real question is on the slide. */
 const GENERIC_PROMPT = new Set(["Pick One", "Pick Many", "Drag and Drop", "Text Entry Interaction", "Hotspot", "Word Bank", "Shortcut Key", "Sequence"]);
-/** Objects that hold other objects without being content themselves. */
 const CONTAINERS = new Set(["objgroup", "scrollarea", "shufflegroup", "stategroup"]);
 
-/** A slide object in reading order, with the state group it belongs to (if any). */
 type Placed = { o: J; tab: number; seq: number; inState: boolean };
 
-/**
- * Flatten a layer's object tree in the author's focus order (tabIndex), which is
- * the accessibility order Storyline itself uses. Objects without one keep their
- * source order after the rest. State groups repeat their label once per
- * visual state, so identical text inside one group is kept once.
- */
 function placed(objects: J[]): Placed[] {
 	const out: Placed[] = [];
 	const walk = (list: J[], inState: boolean, seen: Set<string> | undefined) => {
 		for (const o of list) {
 			if (CONTAINERS.has(str(o.kind))) {
 				const acc = str(o.accType);
-				if (acc === "radio" || acc === "checkbox") continue; // a grouped choice: the interaction block carries its text
+				if (acc === "radio" || acc === "checkbox") continue;
 				const button = str(o.kind) === "stategroup" || acc === "button";
 				walk(arr(o.objects), inState || button, button ? new Set() : seen);
 				continue;
 			}
-			if (/(Correct|Incorrect)Review$|_ReviewShape$/.test(str(o.id))) continue; // quiz review-mode markers, not content
-			if (o.tabEnabled === false) continue; // hidden from assistive tech by the author: decorative or player chrome
+			if (/(Correct|Incorrect)Review$|_ReviewShape$/.test(str(o.id))) continue;
+			if (o.tabEnabled === false) continue;
 			const key = plainText(o).join("\n");
 			if (seen && key) {
 				if (seen.has(key)) continue;
@@ -80,7 +61,6 @@ function placed(objects: J[]): Placed[] {
 const altOf = (o: J) => str(obj(obj(o.data).vectorData).altText) || str(obj(obj(o.data).textdata).altText) || str(obj(obj(o.data).imagedata).altText) || str(o.altText);
 const firstText = (o: J): J => arr(o.textLib)[0] ?? obj(obj(o.data).textdata);
 
-/** Visible strings of one object, before any mapping: text runs, or alt text for media. */
 function plainText(o: J): string[] {
 	const kind = str(o.kind);
 	if (kind === "sequencectrl") return arr(obj(o.data).itemlist).flatMap((item) => plainText({ data: { textdata: item.textdata } }));
@@ -94,12 +74,11 @@ function plainText(o: J): string[] {
 	let s: string;
 	if (typeof vt === "string") s = text(vt);
 	else if (vt && typeof vt === "object") s = arr(obj(vt).blocks).map((b) => arr(b.spans).map((sp) => str(sp.text)).join("")).join("\n");
-	else s = altOf(o); // glyph-only text: the accessible copy is all that survives
+	else s = altOf(o);
 	s = literalText(s).replace(/[\s\r\v]+/g, " ").trim();
 	return s ? [s] : [];
 }
 
-/** Styled spans of one vartext block as prax inline text. */
 function spanInline(block: J, base: J): Inline {
 	let out = "";
 	for (const sp of arr(block.spans)) {
@@ -119,10 +98,9 @@ function spanInline(block: J, base: J): Inline {
 	return tidy(out);
 }
 
-/** One text object's paragraphs, headings and lists, in the author's paragraph order. */
 function textBlocks(o: J, ctx: SlideCtx): Block[] {
 	const t = firstText(o);
-	if (!Object.keys(t).length) return []; // a plain shape: its alt text is only its name
+	if (!Object.keys(t).length) return [];
 	const vt = t.vartext;
 	if (typeof vt === "string") return htmlBlocks(literalText(vt), { base: "" });
 	if (!vt || typeof vt !== "object") {
@@ -156,15 +134,11 @@ type SlideCtx = {
 	paths: J;
 	asset: (id: unknown) => string;
 	skipPicture: (o: J) => boolean;
-	/** Strings the question block already carries, so the slide's copies are not repeated. */
 	quizText: Set<string>;
-	/** Blocks standing in for text-entry fields, keyed by object id. */
 	entries: Map<string, Block>;
 	questionBoxes: Map<Block, Box>;
-	/** Only objects whose content or drag behaviour a mapped question accounts for. */
 	accounted: Set<J>;
 	buttons: string[];
-	/** Labelled buttons that jump to a specific slide: a menu, imported as a list of its labels. */
 	menu: number;
 	vars: number;
 	lose: (source: string, effect: Loss["effect"], detail: string) => void;
@@ -174,7 +148,6 @@ type SlideCtx = {
 	dragdrop: number;
 };
 
-/** Media file for an image object: the export's own file, or the mobile PNG when the original is Flash. */
 function imageSrc(o: J, ctx: Pick<SlideCtx, "root" | "asset">): string | undefined {
 	const lib = arr(o.imagelib)[0] ?? obj(obj(o.data).imagedata);
 	const own = str(lib.url);
@@ -184,7 +157,6 @@ function imageSrc(o: J, ctx: Pick<SlideCtx, "root" | "asset">): string | undefin
 	return [own, fallback].find(usable);
 }
 
-/** Blocks for one slide layer, in reading order. */
 function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []): Block[] {
 	const out: Block[] = [];
 	const candidates: HeroItem[] = [];
@@ -213,7 +185,7 @@ function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []
 		if (ctx.skipPicture(o)) continue;
 		const start = out.length;
 		switch (kind) {
-			case "expandinglabel": // marker pop-up text: content, even though it sits inside the marker's state group
+			case "expandinglabel":
 				out.push(...textBlocks(o, ctx));
 				break;
 			case "vectorshape": {
@@ -222,14 +194,13 @@ function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []
 					if (src) out.push({ kind: "image", src, alt: altOf(o) });
 					break;
 				}
-				if (acc === "radio" || acc === "checkbox") break; // the interaction block carries the choices
+				if (acc === "radio" || acc === "checkbox") break;
 				if (acc === "dial" || acc === "slider") {
 					ctx.lose(`storyline:${acc}`, "dropped", `${acc} control "${label || altOf(o)}" has no Studio equivalent`);
 					break;
 				}
 				if (acc === "button" || inState) {
 					if (label && jumpsToSlide(o)) {
-						// A menu is content (the topics), unlike Next/Submit chrome; consecutive entries share one list.
 						const last = out.at(-1);
 						if (last?.kind === "list" && menus.has(last)) last.items.push(neutralize(label));
 						else {
@@ -276,7 +247,6 @@ function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []
 		}
 		if (slide && out.length > start) candidates.push({ blocks: out.slice(start), box: boxes.get(o), order: seq, ...heroStyle(o, ctx.paths) });
 	}
-	// One jump button ("Start course", "Continue") is navigation, not a menu: it stays player chrome.
 	for (const b of [...out]) {
 		if (b.kind !== "list" || !menus.has(b) || b.items.length !== 1) continue;
 		out.splice(out.indexOf(b), 1);
@@ -287,7 +257,6 @@ function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []
 	out.push(...questions);
 	if (slide) {
 		candidates.push(...questions.map((b, i) => ({ blocks: [b], box: ctx.questionBoxes.get(b), order: candidates.length + i })));
-		// Apply the text beside-picture rule to questions before the shared text layout pass.
 		for (const question of candidates.filter((item) => item.blocks.length === 1 && "prompt" in item.blocks[0]!)) {
 			const q = question.box;
 			if (!validBox(q)) continue;
@@ -310,7 +279,6 @@ function layerBlocks(layer: J, ctx: SlideCtx, slide?: J, questions: Block[] = []
 	return out;
 }
 
-/** Largest recorded text run, falling back to glyph height per recorded line. */
 function heroStyle(o: J, paths: J): Pick<HeroItem, "fontSize" | "color" | "singleLine"> {
 	const styles: J[] = [];
 	const t = firstText(o);
@@ -346,15 +314,12 @@ function heroStyle(o: J, paths: J): Pick<HeroItem, "fontSize" | "color" | "singl
 	return { fontSize: num(style?.fontSize) > 0 ? num(style?.fontSize) : glyphSize > 0 ? glyphSize : undefined, color: str(style?.foregroundColor), singleLine };
 }
 
-/** Raw objects, including hidden hit regions and the groups that own drag events. */
 function objects(list: J[]): J[] {
 	return list.flatMap((o) => [o, ...objects(arr(o.objects))]);
 }
 
-/** Menu lists built from slide-jump buttons, so later entries join the same list. */
 const menus = new WeakSet<Block>();
 
-/** A button whose trigger goes to one specific slide (`gotoplay` → `_player.<scene>.<slide>`), not Next/Previous. */
 const jumpsToSlide = (o: J) => nodes(o.events).some((a) => a.kind === "gotoplay" && /^_player\.[^.]+\.[^.]+$/.test(str(obj(a.objRef).value)));
 
 function nodes(node: unknown): J[] {
@@ -368,13 +333,11 @@ const statementId = (v: unknown) => str(v).replace(/^statements\./, "");
 const objectId = (v: unknown) => str(v).replace(/^(choices|statements)\./, "").replace(/^(choice|statement)_/i, "");
 const propertyObject = (v: unknown) => str(v).split(".").at(-2) ?? "";
 
-/** Choice groups can contain both an answer caption and a separate letter button. */
 function choiceText(c: J, all: J[]): string {
 	const o = all.find((o) => str(o.id) === objectId(c.id) || choiceId(o.connectdata) === str(c.id));
 	if (!o) return "";
 	const own = str(o.accType) !== "image" && Object.keys(firstText(o)).length ? plainText(o) : [];
 	if (own.length) return own.join(" ");
-	// A state group's same-id child is the initial object; siblings can be feedback artwork.
 	const initial = (list: J[]): J[] => list.flatMap((o) => o.kind === "stategroup"
 		? initial(arr(o.objects).filter((child) => child.id === o.id))
 		: CONTAINERS.has(str(o.kind)) ? initial(arr(o.objects)) : [o]);
@@ -383,7 +346,6 @@ function choiceText(c: J, all: J[]): string {
 	return (captions.length ? captions : texts).flatMap(({ o }) => plainText(o)).join(" ");
 }
 
-/** Displayed bounds in slide coordinates; rotated objects need a transform we cannot safely infer. */
 function bounds(list: J[], x = 0, y = 0, sx = 1, sy = 1, out = new Map<J, { x: number; y: number; w: number; h: number }>()): typeof out {
 	for (const o of list) {
 		const ox = x + num(o.xPos ?? 0) * sx;
@@ -425,7 +387,6 @@ function hotspot(it: J, base: J, prompt: Inline, correctIds: Set<string>, ctx: S
 	}
 	const b = boxes.get(image)!;
 	ctx.accounted.add(image);
-	// ponytail: use bounding-box centres; keep region geometry when Studio can express it.
 	const spots = regions.map(({ c, o, box: r }, i) => {
 		ctx.accounted.add(o!);
 		return { label: neutralize(choiceText(c, all) || str(c.lmstext)) || `Spot ${i + 1}`, x: (r!.x + r!.w / 2 - b.x) / b.w * 100, y: (r!.y + r!.h / 2 - b.y) / b.h * 100, correct: correctIds.has(str(c.id)) };
@@ -434,7 +395,6 @@ function hotspot(it: J, base: J, prompt: Inline, correctIds: Set<string>, ctx: S
 	return { kind: "hotspot", prompt, src, alt: altOf(image), spots };
 }
 
-/** Only conjunctions of literal comparisons, never execute or guess arbitrary trigger logic. */
 function comparisons(s: J): J[] {
 	if (s.kind === "compare" && s.operator === "eq") return [s];
 	if (s.kind !== "and") return [];
@@ -442,7 +402,6 @@ function comparisons(s: J): J[] {
 	return children.every((c) => c.length) ? children.flat() : [];
 }
 
-/** Custom drag puzzles sometimes store the key in boolean flags used by completion triggers. */
 function triggeredMatch(slide: J, prompt: Inline, ctx: SlideCtx): Block | undefined {
 	const all = arr(slide.slideLayers).flatMap((l) => objects(arr(l.objects)));
 	const drags = all.filter((o) => obj(o.dragdrop).dragenabled === true);
@@ -475,7 +434,6 @@ function triggeredMatch(slide: J, prompt: Inline, ctx: SlideCtx): Block | undefi
 	return { kind: "match", prompt, pairs: categories.map((c) => [c.items[0]!, c.name]) };
 }
 
-/** Every `key` value nested anywhere under `node`, in document order. */
 function collect(node: unknown, key: string, out: string[] = []): string[] {
 	if (Array.isArray(node)) node.forEach((n) => collect(n, key, out));
 	else if (node && typeof node === "object") {
@@ -487,20 +445,17 @@ function collect(node: unknown, key: string, out: string[] = []): string[] {
 	return out;
 }
 
-/** Only the interaction's recorded attempt counter, not other runtime variables. */
 function attemptComparison(s: J, id: string): boolean {
 	return s.kind === "compare" && s.typea === "property" && s.valuea === `${id}.$AttemptCount`
 		&& s.typeb === "number" && Number.isSafeInteger(s.valueb) && num(s.valueb) > 0;
 }
 
-/** Storyline stores the final try as the cutoff in its answer action conditions. */
 function attemptLimit(it: J): number | undefined {
 	const limits = new Set(nodes(arr(it.answers).map((a) => a.actions))
 		.filter((s) => attemptComparison(s, str(it.id)) && ["lt", "lte", "gte"].includes(str(s.operator))).map((s) => num(s.valueb)));
 	return limits.size === 1 ? [...limits][0] : undefined;
 }
 
-/** Layer ids shown by an answer, optionally restricted to the final recorded try. */
 function shownLayers(answer: J, id?: string, attempts?: number): string[] {
 	const out: string[] = [];
 	const walk = (node: unknown) => {
@@ -523,12 +478,11 @@ function shownLayers(answer: J, id?: string, attempts?: number): string[] {
 	return out;
 }
 
-/** Whole-slide inventory for coverage: title, quiz strings and every object's text on every layer. */
 function inventory(ref: J, slide: J | undefined, out: string[]): void {
 	const title = text(str(ref.title));
 	if (title) out.push(title);
 	for (const it of arr(ref.interactions)) {
-		const prompt = GENERIC_PROMPT.has(str(it.lmstext)) ? "" : str(it.lmstext); // generic labels are not learner-visible
+		const prompt = GENERIC_PROMPT.has(str(it.lmstext)) ? "" : str(it.lmstext);
 		const base = arr(slide?.slideLayers).find((l) => l.isBaseLayer === true) ?? arr(slide?.slideLayers)[0];
 		const all = objects(arr(base?.objects));
 		for (const s of [prompt, ...arr(it.choices).map((c) => choiceText(c, all) || str(c.lmstext)), ...arr(it.statements).map((c) => choiceText(c, all) || str(c.lmstext))]) if (s) out.push(s);
@@ -537,7 +491,6 @@ function inventory(ref: J, slide: J | undefined, out: string[]): void {
 	for (const layer of arr(slide.slideLayers)) for (const { o } of placed(arr(layer.objects))) out.push(...plainText(o));
 }
 
-/** Storyline's embedded Charset subset precedes the original family in its CSS list. */
 function countFonts(slide: J, counts: Map<string, number>): void {
 	for (const node of nodes(slide)) {
 		const vt = obj(node.vartext);
@@ -604,7 +557,6 @@ export function extractStoryline(root: string): Course {
 	const skippedPictures = new Set<string>();
 	const skipPicture = (o: J) => {
 		const src = pictures.get(o);
-		// A unique full-slide picture is often the content (a screenshot slide); only repeats are template.
 		if (!src || (usage.get(src)?.size ?? 0) < 3) return false;
 		skippedPictures.add(src);
 		return true;
@@ -612,7 +564,6 @@ export function extractStoryline(root: string): Course {
 	const quizzes = new Set(arr(data.quizzes).map((q) => `_player.${str(q.id)}`));
 	const resultSlides: string[] = [];
 
-	// Scene names only exist in the player menu (frame.js); the data file keeps ids.
 	const sceneTitles = new Map<string, string>();
 	const frameFile = insidePackage(root, "html5/data/js/frame.js");
 	const frame = frameFile ? provided(frameFile) : {};
@@ -643,7 +594,7 @@ export function extractStoryline(root: string): Course {
 	const lessons: Lesson[] = [];
 	let sceneN = 0;
 	for (const scene of arr(data.scenes)) {
-		if (scene.isMessageScene === true) continue; // player prompts, not course content
+		if (scene.isMessageScene === true) continue;
 		sceneN++;
 		const sceneId = str(scene.id);
 		const pages: Page[] = [];
@@ -662,9 +613,7 @@ export function extractStoryline(root: string): Course {
 			const fill = obj(background.fill);
 			const colours = arr(fill.colors);
 			const colour = str(colours[0]?.rgb).replace(/^0x/i, "#").toLowerCase();
-			// Only uniform, opaque fills count; gradients and artwork need compositing.
 			if (background.type === "fill" && ["linear", "solid"].includes(str(fill.type)) && /^#[0-9a-f]{6}$/.test(colour) && colours.length && colours.every((c) => c.kind === "color" && c.alpha === 100 && str(c.rgb).replace(/^0x/i, "#").toLowerCase() === colour)) backgrounds.set(colour, (backgrounds.get(colour) ?? 0) + 1);
-			// Results slides complete a recorded quiz automatically when the slide starts.
 			if (arr(slide.events).filter((e) => e.kind === "onslidestart").some((e) => nodes(e.actions).some((a) => a.kind === "setquizcomplete" && quizzes.has(str(obj(a.objRef).value))))) {
 				resultSlides.push(at);
 				continue;
@@ -695,9 +644,7 @@ export function extractStoryline(root: string): Course {
 			const consumed = new Set<J>();
 			const layerById = new Map(others.map((l) => [str(l.id), l] as const));
 
-			// Feedback lives on layers the answer actions reveal; those layers are folded into the question.
 			const feedbackOf = (it: J, status: string, attempts: number | undefined): Inline | undefined => {
-				// Prefer the catch-all outcome when choices have their own final messages.
 				const answers = arr(it.answers).filter((a) => str(a.status) === status).sort((a, b) => Number(nodes(b.evaluate).some((s) => s.kind === "other")) - Number(nodes(a.evaluate).some((s) => s.kind === "other")));
 				const found = [...new Set(answers.flatMap((a) => shownLayers(a)))].map((id) => layerById.get(id)).filter((l): l is J => !!l);
 				const final = new Set(answers.flatMap((a) => shownLayers(a, str(it.id), attempts)));
@@ -722,11 +669,8 @@ export function extractStoryline(root: string): Course {
 							if (value) (title ? marked : texts).push({ value, y: num(o.yPos) });
 						}
 					}
-					// A marked title is only dropped beside a message; alone, it is the message.
 					if (texts.length) titles += marked.length;
 					else texts.push(...marked);
-					// Glyph-only feedback records no roles: a layer's topmost text, when it is one
-					// short line above a longer message, is its title ("Correct"). Studio shows its own.
 					const top = texts.length > 1 ? texts.reduce((a, b) => (b.y < a.y ? b : a)) : undefined;
 					if (top && top.value.split(/\s+/).length <= 3 && top.value.length <= 30 && texts.some((t) => t !== top && t.value.length > top.value.length)) {
 						texts.splice(texts.indexOf(top), 1);
@@ -736,7 +680,6 @@ export function extractStoryline(root: string): Course {
 					if (final.has(str(layer.id))) messages.push(strings.join(" "));
 					else if (strings.length) retry++;
 				}
-				// Studio feedback is text only; say so rather than dropping a feedback video or narration unseen.
 				if (media) ctx.lose("storyline:feedback", "dropped", `${media} picture, video or audio item(s) on ${status} feedback layers not imported`);
 				const unique = [...new Set(messages.filter(Boolean))];
 				if (titles) ctx.lose("storyline:feedback", "approximated", `interaction ${str(it.id)}: ${titles} ${status} feedback layer title(s) omitted; Studio labels the result itself`);
@@ -871,7 +814,6 @@ export function extractStoryline(root: string): Course {
 					default:
 						ctx.lose(`storyline:question/${type}`, "dropped", `unrecognised interaction type "${type}"`);
 				}
-				// Graded quiz slides report a score; surveys stay practice.
 				const mapped = [...questions.slice(marks[0]), ...entryBlocks.slice(marks[1])];
 				if (survey || mapped.some((b) => b.kind === "freeResponse" || b.kind === "rating" || b.kind === "matrix")) {
 					for (const id of new Set(answers.flatMap((a) => shownLayers(a)))) {
@@ -899,7 +841,6 @@ export function extractStoryline(root: string): Course {
 				const puzzle = triggeredMatch(slide, neutralize(pageTitle) || "Question", ctx);
 				if (puzzle) questions.push(puzzle);
 			}
-			// Text-entry blocks stand in for the slide's entry fields, in reading order.
 			if (entryBlocks.length) {
 				const fields = placed(arr(base?.objects)).filter(({ o }) => str(o.kind) === "textinput");
 				entryBlocks.forEach((b, i) => {
@@ -910,7 +851,7 @@ export function extractStoryline(root: string): Course {
 			}
 
 			const blocks: Block[] = base ? layerBlocks(base, ctx, slide, questions) : [...questions];
-			ctx.quizText.clear(); // Other layers may intentionally repeat a question's words.
+			ctx.quizText.clear();
 			const items: Item[] = [];
 			for (const [i, layer] of others.entries()) {
 				if (consumed.has(layer)) continue;
@@ -918,7 +859,6 @@ export function extractStoryline(root: string): Course {
 				if (!inner.length) continue;
 				const first = inner.find((b) => b.kind === "paragraph" || b.kind === "heading");
 				const title = first && (first.kind === "paragraph" || first.kind === "heading") && first.text.length < 120 && !/[\r\n\v]/.test(first.text) ? first.text : "";
-				// Studio requires a nonempty heading to recognise an accordion item.
 				items.push({ title: title || `Layer ${i + 2}`, blocks: title ? inner.filter((b) => b !== first) : inner });
 			}
 			if (items.length) {
@@ -941,11 +881,8 @@ export function extractStoryline(root: string): Course {
 	if (skippedPictures.size) losses.push({ at: "course", source: "storyline:template", effect: "dropped", detail: `${skippedPictures.size} pictures repeated on 3+ slides are treated as slide template chrome and skipped: ${[...skippedPictures].sort().join(", ")}` });
 	if (resultSlides.length) losses.push({ at: "course", source: "storyline:results", effect: "dropped", detail: `${resultSlides.length} result slide(s) skipped because Studio reports the score itself: ${resultSlides.sort().join(", ")}` });
 	sourceText.unshift(...[title, description].filter(Boolean));
-	// ponytail: one family for both roles; use explicit role metadata if a future format supplies it.
-	// Highest character count wins; equal counts use UTF-16 code-unit order, never locale.
 	const font = [...fonts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
 	if (font) theme.bodyFont = theme.headingFont = font;
-	// One vote per recorded slide; equal counts use colour code-unit order.
 	const background = [...backgrounds].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
 	if (background) theme.background = background;
 	if (font || lessons.some((lesson) => lesson.pages.length)) {

@@ -13,7 +13,6 @@ import type { Block } from "../src/model.ts";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "praxity-import-test-"));
 
-/** Blocks as Studio source, written through the lesson writer with its front matter removed. */
 function praxOf(blocks: Block | Block[], opts: { assets?: Map<string, string>; deck?: boolean } = {}): string {
 	const out = lesson({ sourceId: "l", title: "L", pages: [{ blocks: [blocks].flat() }] }, "lesson-x", undefined, opts.assets ?? new Map(), opts.deck);
 	return out.slice(out.indexOf("\n---\n\n") + 6, -1);

@@ -1,4 +1,3 @@
-// Archive-safety cases adapted from Praxity Check's test/input.test.ts; src/input.ts is shared with Check.
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -9,7 +8,6 @@ import { type Limits, openInput, UnsafeArchiveError } from "../src/input.ts";
 
 type Entry = { name: string; data?: Buffer; method?: 0 | 8; uncompressedSize?: number; attributes?: number; crc?: number };
 
-/** A minimal zip writer, so each case controls names, sizes and attributes exactly. */
 function zip(entries: readonly Entry[]): Buffer {
 	const local: Buffer[] = [];
 	const central: Buffer[] = [];
@@ -78,7 +76,6 @@ test("openInput refuses unsafe archives and extracts safe ones", async (t) => {
 	await refused("symlink", [{ name: "link", data: Buffer.from("../../escaped.txt"), attributes: 0xa000 << 16 }]);
 	await refused("entry count", [{ name: "a/" }, { name: "b/" }, { name: "c/" }], { maxTotalBytes: limit, maxEntries: 2 });
 	const bomb = zeros(limit + 1);
-	// Declared sizes within the ratio cap, so the streamed-byte cap is what refuses it.
 	await refused("expanded bytes", [{ name: "big.bin", data: Buffer.concat([bomb.data, Buffer.alloc(Math.ceil((limit + 1) / 100))]), method: 8, uncompressedSize: limit + 1, crc: bomb.crc }]);
 	await refused("understated size", [{ name: "bomb.bin", data: bomb.data, method: 8, uncompressedSize: 1, crc: bomb.crc }]);
 	const dense = zeros(2 * limit);

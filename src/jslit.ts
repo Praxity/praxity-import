@@ -1,14 +1,3 @@
-/**
- * Read a JavaScript object literal as data, without executing it. Packages are
- * untrusted, and `node:vm` is not a security boundary, so vendor models such
- * as Captivate's `cp.model.data = {...}` are parsed, not evaluated.
- *
- * Supports objects (quoted, bare or numeric keys), arrays, single/double-quoted
- * strings with escapes, `+` concatenation of strings, numbers, true/false/
- * null/undefined/NaN/Infinity. Any other expression (a runtime reference like
- * `cp.fd`, a call, a function) is skipped up to the next `,`, `}` or `]` at
- * its nesting depth and read as `undefined`.
- */
 export function parseLiteral(src: string, start = 0): unknown {
 	let i = start;
 	const ws = () => {
@@ -44,7 +33,6 @@ export function parseLiteral(src: string, start = 0): unknown {
 		i++;
 		return out;
 	};
-	/** Skip an expression we will not interpret, respecting strings and brackets. */
 	const skip = () => {
 		let depth = 0;
 		while (i < src.length) {
@@ -103,7 +91,6 @@ export function parseLiteral(src: string, start = 0): unknown {
 		}
 		if (c === '"' || c === "'") {
 			let s = string();
-			// Adjacent string concatenation: "a" + "b".
 			for (;;) {
 				const save = i;
 				ws();

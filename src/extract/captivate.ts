@@ -6,15 +6,6 @@ import { neutralize, parse, text } from "../html.ts";
 import { parseLiteral } from "../jslit.ts";
 import { type Blank, type Block, type Course, type Inline, type Loss, markScored, type Option, type Page, type Theme } from "../model.ts";
 
-/*
- * Captivate publishes its project as a JavaScript object literal:
- * `cp.D = cp.model.data = {...}` in assets/js/CPM.js (Captivate 9 to 2019) or
- * assets/js/project.js (Captivate 12+), and `cp.model['<id>Data'] = {...}` per
- * question pool. Slides list their items (`si`); each item has a timing entry
- * (`Slide1`) and a display entry (`Slide1c`, via `mdi`). Classic text is
- * rendered to PNG with the words kept in `accstr`; Captivate 12+ keeps
- * Draft.js JSON in `text`.
- */
 type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
@@ -22,7 +13,6 @@ const str = (v: unknown): string => (typeof v === "string" ? v : typeof v === "n
 const num = (v: unknown): number => (typeof v === "number" ? v : 0);
 const list = (v: unknown): string[] => (Array.isArray(v) ? v.map(str) : str(v).split(",")).map((s) => s.trim()).filter(Boolean);
 
-/** The object literal that follows `cp.model.data =` or `cp.model['…'] =`, parsed without executing it. */
 function loadModel(file: string): J {
 	const src = readFileSync(file, "utf8");
 	const m = /cp\.model(?:\.data|\[[^\]]+\])\s*=\s*\{/.exec(src);
@@ -30,7 +20,6 @@ function loadModel(file: string): J {
 	return obj(parseLiteral(src, m.index + m[0].length - 1));
 }
 
-/** Captivate's image caches are object literals, not executable package scripts. */
 function imageCache(root: string, base: string, embedded: Map<string, Buffer>, losses: Loss[]): void {
 	const dir = posix.join(base, "dr");
 	if (!existsSync(join(root, dir))) return;
@@ -39,7 +28,6 @@ function imageCache(root: string, base: string, embedded: Map<string, Buffer>, l
 		const file = insidePackage(root, rel);
 		if (!file) continue;
 		const source = readFileSync(file, "utf8");
-		// imgmd.json usually indexes caches, but some publishes also put image assignments in it.
 		for (const match of source.matchAll(/\bcp\.imagesJSONCache\w*\s*=\s*\{/g)) {
 			let entries: J;
 			try { entries = obj(parseLiteral(source, match.index + match[0].length - 1)); }
@@ -48,7 +36,6 @@ function imageCache(root: string, base: string, embedded: Map<string, Buffer>, l
 				continue;
 			}
 			for (const key of Object.keys(entries).sort()) {
-				// The vendor terminates these maps with a sentinel, not an image entry.
 				if (key === "___" && entries[key] === "___") continue;
 				const safe = !/^[a-zA-Z]:|[\\\x00-\x1f\x7f]/.test(key) && key.split("/").every((p) => p && p !== "." && p !== "..");
 				const path = safe ? posix.join(base, key) : "";
@@ -67,7 +54,6 @@ function imageCache(root: string, base: string, embedded: Map<string, Buffer>, l
 	}
 }
 
-/** Published design values only; a missing setting leaves Studio's default in place. */
 function captivateTheme(data: J, slides: J[], losses: Loss[]): Theme | undefined {
 	const project = obj(data.project);
 	const playbar = obj(data.playBarProperties);
@@ -126,8 +112,6 @@ function captivateTheme(data: J, slides: J[], losses: Loss[]): Theme | undefined
 		details.push("responsive type sizes, additional text styles, object presets and button states have no course-wide Studio equivalent");
 	}
 	if (!theme.bodyFont) {
-		// ponytail: classic vt captions are the font fallback, weighted by non-whitespace
-		// characters; ties use font-name code-unit order. Raster-only captions supply no font.
 		const weights = new Map<string, number>();
 		const visit = (node: ReturnType<typeof parse> | ReturnType<typeof parse>["childNodes"][number], inherited = "") => {
 			let font = inherited;
@@ -155,7 +139,6 @@ function captivateTheme(data: J, slides: J[], losses: Loss[]): Theme | undefined
 		const colour = resolve(Object.keys(canvas).length ? enabled(canvas.fe) && canvas.fa === 1 ? canvas.bc : undefined : slide.bc).toLowerCase();
 		if (/^#[0-9a-f]{6}$/.test(colour)) backgrounds.set(colour, (backgrounds.get(colour) ?? 0) + 1);
 	}
-	// One vote per recorded slide; equal counts use colour code-unit order.
 	const background = [...backgrounds].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0]?.[0];
 	if (background) {
 		theme.background = background;
@@ -167,7 +150,6 @@ function captivateTheme(data: J, slides: J[], losses: Loss[]): Theme | undefined
 	return Object.keys(theme).length ? theme : undefined;
 }
 
-/** Draft.js content as plain blocks; `bold`/`italic` are per-character flags for inline markdown. */
 type Draft = { type: string; text: string; bold: boolean[]; italic: boolean[] };
 function draft(json: unknown): Draft[] {
 	let editor: J = {};
@@ -189,7 +171,6 @@ function draft(json: unknown): Draft[] {
 	});
 }
 
-/** Inline markdown for one Draft block: runs of identical bold/italic flags, markers kept off edge spaces. */
 function draftInline(d: Draft): Inline {
 	let out = "";
 	for (let i = 0; i < d.text.length; ) {
@@ -206,9 +187,7 @@ function draftInline(d: Draft): Inline {
 
 const GENERIC_ACC = /^(Image|Click Box|Video|Button|Smart Shape|Text Caption|Highlight Box|Web Object|Text Entry Box.*|Rollover.*|Zoom.*)?$/;
 const CLASSIC = { clickBox: 13, image: 15, textCaption: 19, textEntry: 24, button: 29, video: 98, shape: 612, webObject: 652, hotspot: 684, container: 1268 };
-/** Question-slide parts the question block already carries: prompt (79), answers (80), column headers (87), submit/progress/review (91, 92, 94), Likert grid (96), hotspot area (131). */
 const QUIZ_TYPES = new Set([79, 80, 87, 91, 92, 94, 96, 131]);
-/** Quiz chrome that is neither authored text nor an answer: buttons, progress, review area, letters and entry boxes. */
 const QUIZ_CHROME = new Set([91, 92, 94, 96, 131, 10011, 10088, 10094, 10098, 10180, 10182]);
 
 export function extractCaptivate(root: string): Course {
@@ -223,7 +202,6 @@ export function extractCaptivate(root: string): Course {
 			meta = obj(project.metadata);
 			toc = new Map(arr(project.toc).map((t) => [str(obj(t).id), str(obj(t).title)]));
 		} catch {
-			/* project.txt is optional; the model carries everything needed */
 		}
 	}
 	const main = obj(data.project_main);
@@ -233,7 +211,6 @@ export function extractCaptivate(root: string): Course {
 	const embedded = new Map<string, Buffer>();
 	imageCache(root, "", embedded, losses);
 
-	/** Alternative-state copies of an object; they share its place on the slide and are not separate content. */
 	const variants = (model: J): Set<number> => {
 		const out = new Set<number>();
 		for (const v of Object.values(model)) for (const st of arr(obj(v).stl).slice(1)) for (const uid of arr(obj(st).stsi)) out.add(num(uid));
@@ -241,7 +218,6 @@ export function extractCaptivate(root: string): Course {
 	};
 
 	type Item = { name: string; type: number; it: J; c: J; tag: string; top: number; left: number };
-	/** Items of a slide, flattened through Captivate 12+ containers, minus state variants. */
 	const items = (model: J, holder: J, skip: Set<number>, out: Item[] = []): Item[] => {
 		for (const ref of arr(holder.si).map(obj)) {
 			const name = str(ref.n);
@@ -265,7 +241,6 @@ export function extractCaptivate(root: string): Course {
 		}
 	};
 
-	/** Authored text of an item: Draft.js blocks (12+), a checkbox label, or the accessibility string (classic). */
 	const draftOf = (x: Item): Draft[] => {
 		if (typeof x.it.text === "string") return draft(x.it.text);
 		const normal = obj(obj(parseJson(x.it.widgetProps)).normal);
@@ -318,7 +293,6 @@ export function extractCaptivate(root: string): Course {
 		}).filter(Boolean);
 	};
 
-	/** Slide narration: an entry of project_main.slideAudios whose frame range starts inside the slide. */
 	const slideAudios = list(main.slideAudios).map((n) => obj(data[n]));
 	const narration = (slide: J): string | undefined => {
 		const from = num(slide.from);
@@ -332,16 +306,13 @@ export function extractCaptivate(root: string): Course {
 		const type = str(q.qtp);
 		if (!Object.keys(q).length || type === "InteractiveItemQuestion") return [];
 		const byName = new Map(all.flatMap((x) => [[x.name, x], [str(x.it.mdi), x]] as Array<[string, Item]>));
-		// Answer lists name timing or display entries (including `hotspot`, `fib` and `sha` suffixes).
 		const itemOf = (ref: string): Item | undefined => {
 			const name = ref.split(":")[0] ?? "";
 			return byName.get(name) ?? byName.get(name.replace(/c$/, ""));
 		};
-		// Matching items label themselves with a letter in `atxtlms`; the wording is in `aAnsTxtlms`.
 		const answerText = (x: Item | undefined): string => (x ? neutralize(str(x.c.aAnsTxtlms).trim() || str(x.c.atxtlms).trim() || plain(x)) : "");
 		const textOf = (ref: string): string => answerText(itemOf(ref));
 		const aid = (x: Item) => str(x.c.aid ?? x.it.aid);
-		// Captivate strips quotation marks from `qt`; the slide's caption keeps the learner's exact wording.
 		const letters = (t: string) => t.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 		const questionItem = all.find((x) => x.tag === "slide-item-question-text") ?? (str(q.qt).trim() ? all.find((x) => x.type === 79 && letters(plain(x)) === letters(str(q.qt))) : undefined);
 		const prompt = neutralize((questionItem ? plain(questionItem) : "") || str(q.qt).trim() || "Question");
@@ -350,7 +321,6 @@ export function extractCaptivate(root: string): Course {
 		const correct = new Set(list(q.cal));
 		const isCorrect = (x: Item) => x.c.ic === true || correct.has(x.name) || correct.has(`${x.name}c`) || correct.has(aid(x));
 		const lose = (effect: Loss["effect"], detail: string) => losses.push({ at, source: `captivate:question/${type || "unknown"}`, effect, detail });
-		// Classic and modern players use different sentinels for unlimited attempts.
 		const unlimited = q.noa === (modelFile.endsWith("project.js") ? 1024 : 9999);
 		const attempts = unlimited ? { attempts: 0 } : Number.isSafeInteger(q.noa) && num(q.noa) > 0 ? { attempts: num(q.noa) } : {};
 		const incorrect = textOf(list(q.ifc).at(-1) ?? "");
@@ -392,13 +362,11 @@ export function extractCaptivate(root: string): Course {
 				return [{ kind: "freeResponse", prompt }];
 			}
 			case "FIB": {
-				// Each `ao` entry names a blank; its caption holds the sentence, without a reliable text offset.
 				const blanks = list(q.ao).map((ref) => obj(model[ref.split(":")[0] ?? ""]));
 				const sentences = [...new Set(blanks.map((b) => {
 					const caption = str(obj(model[str(b.capN)]).mdi) || `${str(b.capN)}c`;
 					return str(obj(model[caption]).fibText).trim();
 				}).filter(Boolean))];
-				// Captivate's FIBAnswer uses `sac` for a combo box and `allAnswers` for its ordered options.
 				const dropdown = blanks.length > 0 && blanks.every((b) => b.sac === true);
 				const accepted: Blank[] = blanks.map((b) => ({ answers: list(b.correctAnswers), ...(b.sac === true ? { choices: list(b.allAnswers) } : {}) }));
 				if (!blanks.length || accepted.some((b) => !b.answers.length)) lose("approximated", "some fill-in-the-blank answers could not be read; unanswerable blanks are kept as ____");
@@ -431,7 +399,6 @@ export function extractCaptivate(root: string): Course {
 				];
 				const image = candidates.find((c) => {
 					if (!c.src || !c.bounds || !centres.every((p) => p.x >= c.bounds![0] && p.x <= c.bounds![2] && p.y >= c.bounds![1] && p.y <= c.bounds![3])) return false;
-					// A bare background is not the question image when the targets are separate foreground content.
 					return !all.some((x) => {
 						if (x.c === c.display || hiddenItem(x) || !(isPicture(x) || x.type === CLASSIC.textCaption || x.type === CLASSIC.shape || x.tag === "slide-item-text")) return false;
 						const b = box(x.c.b);
@@ -478,12 +445,10 @@ export function extractCaptivate(root: string): Course {
 		}
 	};
 
-	/** Image path of a display entry; shapes without an image fill carry a bare "dr/". */
 	const imagePath = (c: J): string => (str(c.ip).endsWith("/") ? "" : str(c.ip));
 	const isPicture = (x: Item) => x.type === CLASSIC.image || x.tag === "cp-shape-lib-item";
 	const hiddenItem = (x: Item) => x.c.visible === 0 || x.c.visible === "0";
 
-	/** Classic drag/drop keys use type IDs (`t`); participant names (`n`) locate their labels. */
 	const dragDrop = (model: J, slide: J, ordered: Item[], at: string) => {
 		const blocks: Block[] = [];
 		const usedText = new Set<string>();
@@ -501,7 +466,6 @@ export function extractCaptivate(root: string): Course {
 				lose("dropped", `${sources.length} sources and ${targets.length} targets: ${!keys.length ? "no graded answer key" : keys.length > 1 ? "alternative answer keys" : "a sequence-dependent answer key"}; readable slide text is kept`);
 				continue;
 			}
-			// ponytail: accept only fixed, single-use pairs; richer Captivate expressions remain losses until needed.
 			const expression = str(keys[0].a);
 			const key = /^\\b((?:\(t:\w+-t:\w+\)\{1\})+)\\b$/.exec(expression);
 			const pairs = key ? [...key[1]!.matchAll(/\(t:(\w+)-t:(\w+)\)\{1\}/g)].map((m) => [m[1]!, m[2]!] as const) : [];
@@ -528,7 +492,6 @@ export function extractCaptivate(root: string): Course {
 			};
 			const correct = feedbackText(interaction.osc);
 			const incorrect = feedbackText(interaction.ofc);
-			// DD.Interaction reads ma and enforces the limit only when it is positive.
 			const attempts = Number.isSafeInteger(interaction.ma) ? { attempts: Math.max(0, num(interaction.ma)) } : {};
 			const feedback = { ...attempts, ...(correct ? { correct } : {}), ...(incorrect ? { incorrect } : {}) };
 			const prompts = ordered.filter((x) => !participants.has(x.name) && !usedText.has(x.name) && !hiddenItem(x) &&
@@ -548,7 +511,6 @@ export function extractCaptivate(root: string): Course {
 		return { blocks, usedText };
 	};
 
-	/** Pictures repeated on three or more slides are the slide template (logos, navigation art), not content. */
 	const chrome = new Set<string>();
 	const skip = variants(data);
 	{
@@ -568,7 +530,6 @@ export function extractCaptivate(root: string): Course {
 		const at = `${base ? `${base}/` : ""}${sid}`;
 		const all = items(model, slide, skip);
 		const scoreIndex = obj(model.quizzingData).anyScoreSlide;
-		// anyScoreSlide is a zero-based slide index; 111 is kCPOTScoringResult.
 		if ((Number.isSafeInteger(scoreIndex) && num(scoreIndex) >= 0 && list(obj(model.project_main).slides)[num(scoreIndex)] === sid) || all.some((x) => x.type === 111)) {
 			losses.push({ at, source: "captivate:results", effect: "dropped", detail: "result slide skipped because Studio reports the score itself" });
 			return undefined;
@@ -590,7 +551,6 @@ export function extractCaptivate(root: string): Course {
 		image(imagePath(background), displayAlt(background));
 		if (blocks.length && !project.responsive && !project.isResponsive && !background.rpvt && !background.tr && !background.r) {
 			const b = arr(background.b);
-			// slide.mdi is the full-slide canvas; classic publishes may record a zero box.
 			const bounds = background.b === undefined || (b.length === 4 && b.every((v) => v === 0)) ? [0, 0, project.w, project.h] : b;
 			if (bounds.length === 4 && bounds.every((v) => typeof v === "number" && Number.isFinite(v))) heroItems.push({ blocks: [...blocks], box: { x: num(bounds[0]), y: num(bounds[1]), w: num(bounds[2]) - num(bounds[0]), h: num(bounds[3]) - num(bounds[1]) }, order: -1 });
 		}
@@ -599,7 +559,6 @@ export function extractCaptivate(root: string): Course {
 		const cc = captions(slide);
 		if (cc.length) blocks.push({ kind: "paragraph", text: neutralize(cc.join(" ")) });
 
-		// Answer options and feedback captions reach the page through the question block, not as loose text.
 		const quizParts = new Set(isQuestion ? [...list(q.ail), ...list(q.ao), ...list(q.aio), ...list(q.aco), str(q.osc), str(q.oic), str(q.frc), str(q.tfcn), ...list(q.ifc)].map((a) => a.split(":")[0]?.replace(/c$/, "") ?? "") : []);
 		const quizPart = (x: Item) => isQuestion && (quizParts.has(x.name) || x.type >= 10000 || QUIZ_TYPES.has(x.type));
 		const counts = new Map<string, number>();
@@ -614,16 +573,12 @@ export function extractCaptivate(root: string): Course {
 				const b = arr(entry.x.c.b);
 				const centre = !entry.x.it.widgetProps && b.length === 4 && b.every((v) => typeof v === "number" && Number.isFinite(v)) && num(b[2]) > num(b[0]) && num(b[3]) > num(b[1])
 					? (num(b[1]) + num(b[3])) / 2 : undefined;
-				// ponytail: scan the slide's rows; index them only if object counts make this costly.
-				// Fixed boxes within 10px of the first item's vertical centre share a row.
-				// The anchor never moves, so nearby rows cannot merge through chained offsets.
 				const row = centre === undefined ? undefined : rows.find((r) => r.centre !== undefined && Math.abs(r.centre - centre) <= 10);
 				if (row) row.entries.push(entry);
 				else rows.push({ centre, entries: [entry] });
 			}
 			return rows.flatMap((r) => r.entries.sort((a, b) => a.x.left - b.x.left || a.i - b.i).map(({ x }) => x));
 		};
-		// Objects hidden until an action shows them (reveal panels, feedback) follow the visible content.
 		const ordered = [...readingOrder(indexed.filter((e) => !hiddenItem(e.x))), ...readingOrder(indexed.filter((e) => hiddenItem(e.x)))];
 		const dd = dragDrop(model, slide, ordered, at);
 		for (const x of ordered) {
@@ -673,7 +628,6 @@ export function extractCaptivate(root: string): Course {
 			if (!hiddenItem(x) && !project.responsive && !project.isResponsive && !x.c.rpvt && !x.c.tr && !x.c.r && !x.it.widgetProps && b.length === 4 && b.every((v) => typeof v === "number" && Number.isFinite(v))) {
 				let fontSize: number | undefined;
 				let color: string | undefined;
-				// Classic captions retain their authored type in vt even when rendered as PNG.
 				const visit = (node: ReturnType<typeof parse> | ReturnType<typeof parse>["childNodes"][number], size?: number, ink?: string) => {
 					if ("tagName" in node) {
 						const style = node.attrs.find((a) => a.name === "style")?.value ?? "";
@@ -697,7 +651,6 @@ export function extractCaptivate(root: string): Course {
 			losses.push({ at, source: "captivate:hotspot", effect: "approximated", detail: `${hotspots.length} 360° hotspot labels imported as a list; their placement and click feedback are not` });
 		}
 		if (isQuestion) {
-			// Captivate flags surveys (is), knowledge checks (ikc) and pretests (ipq); anything else is graded.
 			if (!(q.is === true || q.ikc === true || q.ipq === true)) markScored(questions);
 			for (const question of questions) if (question.kind === "matrix" || question.kind === "rating") {
 				const labels = new Set([question.prompt, ...question.scale, ...question.scale.map((_, i) => String(i + 1)), ...(question.kind === "matrix" ? question.statements : []), "Likert", "Likert Scale"]);
@@ -706,7 +659,6 @@ export function extractCaptivate(root: string): Course {
 					if (b.kind === "paragraph" && labels.has(b.text.trim())) blocks.splice(i, 1);
 				}
 			}
-			// The question owns its image; do not also emit it as a separate illustration.
 			for (const q of questions) if (q.kind === "hotspot") {
 				for (let i = blocks.length - 1; i >= 0; i--) {
 					const b = blocks[i];
@@ -722,7 +674,6 @@ export function extractCaptivate(root: string): Course {
 		return { title, blocks };
 	};
 
-	/** Everything a learner can read, gathered per slide without going through the block mapping. */
 	const inventory = (model: J, sid: string, skip: Set<number>) => {
 		const slide = obj(model[sid]);
 		const push = (s: string) => s.trim() && sourceText.push(s.trim());

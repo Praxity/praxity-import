@@ -53,7 +53,6 @@ const [input] = positionals;
 if (!input || positionals.length > 1 || !values.output) fail(2, "invalid_arguments", USAGE);
 if (!existsSync(input)) fail(1, "input_not_found", `No such file or directory: ${input}`);
 
-/** Resolve symlinks through the deepest existing ancestor, so aliases cannot hide an overlap. */
 function canonical(path: string): string {
 	try {
 		return realpathSync(path);
@@ -66,12 +65,10 @@ const inputPath = canonical(resolve(input));
 if (output === inputPath || output.startsWith(inputPath + sep) || inputPath.startsWith(output + sep)) fail(2, "invalid_arguments", "--output must be outside the input");
 const replacing = existsSync(output) && readdirSync(output).length > 0;
 if (replacing) {
-	// Only replace what is recognisably an earlier import, never an arbitrary folder.
 	if (!values.force) fail(1, "output_exists", `${output} is not empty; pass --force to replace a previous import`);
 	if (!existsSync(join(output, "import-report.json"))) fail(1, "output_exists", `${output} is not a previous import (no import-report.json); refusing to replace it`);
 }
 
-// Build beside the destination and swap only on success, so a failed import never costs the previous one.
 const staging = `${output}.importing-${process.pid}`;
 try {
 	await rm(staging, { recursive: true, force: true });

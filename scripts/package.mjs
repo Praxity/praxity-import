@@ -14,8 +14,6 @@ const inside = (base, path) => {
 	return rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 };
 const legalName = /^(?:licen[cs]e|licensing|copying|notice|copyright|third[-_]?party)(?:[._-]|$)/i;
-// These audited payloads use versions from THIRD-PARTY-NOTICES.md. A dependency
-// update must review its runtime files and licence before it can be distributed.
 const runtimePackages = {
 	parse5: { paths: ["dist"] },
 	entities: { paths: ["dist"] },
@@ -79,8 +77,6 @@ async function build(directory) {
 		if (/\.(?:map|d\.ts)$/i.test(path) || /\.(?:test|spec)\.[^.]+$/i.test(path)) return;
 		if (/\.(?:node|exe|dll|dylib|so|a|lib|wasm)$/i.test(path) || /^(?:node|nodejs)$/i.test(basename(path))) throw new Error(`Native code or bundled runtime is refused: ${source}`);
 		const raw = await readFile(source);
-		// The allowlisted payload is text only. This also rejects native files
-		// disguised with a source extension, rather than trusting their names.
 		let text;
 		try { text = new TextDecoder("utf-8", { fatal: true }).decode(raw); }
 		catch { throw new Error(`Non-text payload is refused: ${source}`); }
@@ -155,7 +151,6 @@ async function build(directory) {
 		catch (error) { if (error.code !== "ENOENT") throw error; ancestor = dirname(ancestor); }
 	}
 	if ([...directories].some((source) => inside(source, physicalOutput)) || inside(join(root, ".git"), physicalOutput) || inside(join(root, "corpus"), physicalOutput)) throw new Error("Output cannot be inside a payload source, .git or corpus.");
-	// Recheck after reading; no output is created for validation failures.
 	if (git("rev-parse", "HEAD") !== revision || git("status", "--porcelain", "--untracked-files=all")) throw new Error("Source tree changed while packaging.");
 	await mkdir(dirname(directory), { recursive: true });
 	await mkdir(directory);

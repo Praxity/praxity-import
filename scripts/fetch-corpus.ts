@@ -1,14 +1,3 @@
-/**
- * Fetch every public package in corpus/sources.json into the corpus folder
- * (scripts/corpus.ts): git sources at their pinned commit, zips checked against
- * their SHA-256. Existing copies are left alone. `member` names one course
- * inside a bundle zip. Licences are mostly unknown: the copies are for local
- * testing only and never leave the machines that test with them.
- *
- *   node scripts/fetch-corpus.ts           fetch missing public packages
- *   node scripts/fetch-corpus.ts --lock    record every file's SHA-256 in <corpus>/manifest.json
- *   node scripts/fetch-corpus.ts --check   compare the corpus with its manifest; list missing inputs
- */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -69,7 +58,6 @@ async function fetchPublic(sources: Source[]) {
 			mkdirSync(join(root, "zips"), { recursive: true });
 			if (!s.member) writeFileSync(path, body);
 			else {
-				// A course inside a bundle: keep just that member, not the whole archive.
 				const bundle = join(root, "zips", `.bundle-${sha}.zip`);
 				writeFileSync(bundle, body);
 				execFileSync("unzip", ["-oqj", bundle, s.member, "-d", join(root, "zips")]);

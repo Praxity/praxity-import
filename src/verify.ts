@@ -8,10 +8,6 @@ import { isFileName, text } from "./html.ts";
 
 const run = promisify(execFile);
 
-/**
- * Studio's CLI: $PRAXITY_CLI, then `praxity` on PATH, then the macOS app. A
- * `.mjs` path is the standalone package and runs under this Node.
- */
 export function studioCli(): string[] | undefined {
 	const candidates = [
 		process.env.PRAXITY_CLI,
@@ -36,7 +32,6 @@ async function studio(args: string[]): Promise<{ code: number; stdout: string; s
 	}
 }
 
-/** Undo `neutralize` and fold case/width so words compare across the round trip. */
 export function words(s: string): string[] {
 	return (
 		s
@@ -47,14 +42,12 @@ export function words(s: string): string[] {
 	);
 }
 
-/** Share of source words (with multiplicity) that reappear in the output. */
 export function coverage(source: string[], output: string[]): { sourceWords: number; matched: number; ratio: number; missing: string[] } {
 	const have = new Map<string, number>();
 	for (const w of output.flatMap(words)) have.set(w, (have.get(w) ?? 0) + 1);
 	let total = 0;
 	let matched = 0;
 	const missing = new Map<string, number>();
-	// File names that tools store as alt text or titles are not course text, and the writer leaves them out.
 	for (const w of source.filter((s) => !isFileName(s)).flatMap(words)) {
 		total++;
 		const n = have.get(w) ?? 0;
@@ -67,7 +60,6 @@ export function coverage(source: string[], output: string[]): { sourceWords: num
 	return { sourceWords: total, matched, ratio: total ? Math.round((matched / total) * 1000) / 1000 : 1, missing: top };
 }
 
-/** Every string Studio parsed, with HTML reduced to text. */
 function strings(node: unknown, out: string[]): string[] {
 	if (typeof node === "string") out.push(/[<&]/.test(node) ? text(node) : node);
 	else if (Array.isArray(node)) node.forEach((n) => strings(n, out));
@@ -84,8 +76,6 @@ export type Verification = {
 };
 
 export async function verify(project: string, sourceText: string[]): Promise<Verification> {
-	// Studio before 0.2.0 has no `inspect` and would open the desktop app instead;
-	// 0.2.0 shows the writer's backslash escapes and dropdown/word-bank blanks as literal text.
 	const version = (await studio(["--version"])).stdout.trim();
 	const [major = 0, minor = 0] = version.split(".").map(Number);
 	if (major === 0 && minor < 3) return { parse: { ok: false, error: `Studio CLI ${version || "(unknown version)"} cannot read inline escapes or dropdown and word-bank blanks; 0.3.0 or later is required. Set PRAXITY_CLI.` } };
@@ -105,7 +95,6 @@ export async function verify(project: string, sourceText: string[]): Promise<Ver
 		coverage: coverage(sourceText, strings(parsed, [])),
 	};
 
-	// Export writes identity sidecars into the project, so it runs on a copy.
 	const scratch = await mkdtemp(join(tmpdir(), "praxity-import-verify-"));
 	try {
 		await cp(project, join(scratch, "course"), { recursive: true });

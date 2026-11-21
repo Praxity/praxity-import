@@ -1,13 +1,3 @@
-/**
- * Where the test corpus lives and how to check it. The corpus is third-party
- * material kept only on the machines that test with it: $PRAXITY_IMPORT_CORPUS,
- * or corpus/local/ in this checkout (Git ignores both).
- *
- *   <corpus>/<clone>/          public git sources (corpus/sources.json)
- *   <corpus>/zips/             public zip sources
- *   <corpus>/sources.local.json  private sources; `file` is relative to <corpus> or absolute
- *   <corpus>/manifest.json     SHA-256 of every file, written by `pnpm corpus --lock`
- */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -35,7 +25,6 @@ export function corpusRoot(env: NodeJS.ProcessEnv = process.env): string {
 
 const readSources = (p: string): Source[] => (JSON.parse(readFileSync(p, "utf8")) as { sources: Source[] }).sources;
 
-/** Public sources always; private ones when the corpus has a sources.local.json. */
 export function loadSources(root: string): { sources: Source[]; privateList: boolean } {
 	const local = join(root, "sources.local.json");
 	const privateList = existsSync(local);
@@ -48,7 +37,6 @@ export function inputOf(s: Source, root: string): string {
 	return join(root, s.clone ?? "", s.path ?? "");
 }
 
-/** Every corpus file with its hash, sorted by path. Clone metadata and Finder litter are not corpus content. */
 export function hashTree(root: string): ManifestFile[] {
 	const files: ManifestFile[] = [];
 	const walk = (dir: string) => {
