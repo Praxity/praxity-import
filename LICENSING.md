@@ -5,8 +5,7 @@ You may use, change, distribute and sell it, including in commercial products.
 Keep the copyright and permission notices with copies or substantial portions
 of the software.
 
-Earlier versions of this repository published under earlier Praxity terms are also
-available under the MIT licence from 2026-11-21.
+Earlier versions of this repository published under PolyForm Perimeter 1.0.1 or earlier Praxity terms are also available under the MIT licence from 2026-11-21.
 
 Third-party components retain their own licences. See
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

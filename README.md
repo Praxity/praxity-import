@@ -87,8 +87,7 @@ loss reporting. Commercial conversion services also exist.
 Praxity-authored code in Praxity Import by Ariel Harlap is available under the
 [MIT licence](LICENSE). See [LICENSING.md](LICENSING.md).
 
-Earlier versions of this repository published under earlier Praxity terms are also
-available under the MIT licence from 2026-11-21.
+Earlier versions of this repository published under PolyForm Perimeter 1.0.1 or earlier Praxity terms are also available under the MIT licence from 2026-11-21.
 
 [NOTICE.md](NOTICE.md) has the trademark and non-affiliation statement for the
 authoring tools it reads. Third-party components retain their own licences;
