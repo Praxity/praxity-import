@@ -84,4 +84,11 @@ loss reporting. Commercial conversion services also exist.
 
 ## Licence
 
-Praxity Import by Ariel Harlap. Source-available under the PolyForm Perimeter License 1.0.1: free at home and at work, including paid client work. See [LICENSING.md](LICENSING.md). [NOTICE.md](NOTICE.md) has the trademark and non-affiliation statement for the authoring tools it reads.
+Praxity-authored code in Praxity Import by Ariel Harlap is available under the
+[MIT licence](LICENSE). See [LICENSING.md](LICENSING.md).
+
+Earlier versions of this repository published under PolyForm Perimeter 1.0.1 or earlier Praxity terms are also available under the MIT licence from 2026-11-21.
+
+[NOTICE.md](NOTICE.md) has the trademark and non-affiliation statement for the
+authoring tools it reads. Third-party components retain their own licences;
+see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
