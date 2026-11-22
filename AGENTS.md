@@ -10,6 +10,12 @@ LiaScript, Xerte, static HTML) into Praxity Studio course folders: `course.yaml`
 `.prax` lessons and `assets/`. Its sibling tools are Check (accessibility) and
 Trace (design diagnostics).
 
+Import writes the older grammar 3, which current Studio refuses. To use the
+output with current Studio, convert it with [Studio's archived grammar 3 to 4
+converter](https://github.com/Praxity/studio/blob/main/docs/context/converter-archive.md),
+or wait for Import to write grammar 4. The converter documentation records its
+publication status and the staging and review steps to follow.
+
 ## Design rules
 
 - **Deterministic.** Output is a pure function of the input bytes. The import
@@ -25,11 +31,12 @@ Trace (design diagnostics).
   (`src/model.ts`) → `writeProject`. Only extractors contain tool-specific
   code. Only the writer emits `.prax` syntax.
 - **Studio judges validity.** `--verify` runs `praxity inspect` and
-  `praxity export` from Studio 0.3.0+ (`PRAXITY_CLI`), and measures word
-  coverage against the extractor's independent `sourceText` inventory. Output
-  targets Studio grammar v3, including inline escapes and the fill-blank
-  `dropdown`/`word-bank` styles that Studio 0.3.0 added. Keep Studio source
-  out of this repository.
+  `praxity export` from the frozen Studio 0.3.0 CLI (`PRAXITY_CLI`), and
+  measures word coverage against the extractor's independent `sourceText`
+  inventory. This is legacy verification of grammar 3, including inline
+  escapes and the fill-blank `dropdown`/`word-bank` styles that Studio 0.3.0
+  added. Current Studio refuses this output. Keep Studio source out of this
+  repository.
 - **Packages are untrusted.** Never evaluate their JavaScript (`vm`, `eval`,
   `Function`). Parse it with `src/jslit.ts`. When a file path comes from
   package data or a directory listing, open the file through `insidePackage`
