@@ -3,16 +3,26 @@
 Import SCORM packages and web exports from other authoring tools into
 [Praxity Studio](https://praxity.io) course folders: `course.yaml`, `.prax`
 lessons and `assets/`, plus a report of anything that did not carry over.
+
+Import writes the older grammar 3, which current Studio refuses. To use the
+output with current Studio, convert it with [Studio's archived grammar 3 to 4
+converter](https://github.com/Praxity/studio/blob/main/docs/context/converter-archive.md),
+or wait for Import to write grammar 4. The converter documentation records its
+publication status and the staging and review steps to follow.
+
 Content, questions (answer keys, feedback, attempts, pass marks) and as much of
 the source's design as it records (theme, slide or page format, heroes,
 columns, spacing) carry over; the same package always gives the same output.
 
 ```sh
 pnpm install
-node src/cli.ts path/to/course.zip --output my-course --verify
+node src/cli.ts path/to/course.zip --output my-course
 ```
 
-`--verify` needs the Studio 0.3.0 CLI or later. Download
+## Legacy verification
+
+`--verify` needs the frozen Studio 0.3.0 CLI, which reads grammar 3. Current
+Studio cannot verify Import's output. For legacy verification, download
 `praxity-cli-0.3.0-macos-arm64.tar.gz` (Apple Silicon) or
 `praxity-cli-0.3.0-macos-x64.tar.gz` (Intel) from the
 [Studio 0.3.0 release](https://github.com/Praxity/desktop/releases/tag/v0.3.0),
@@ -23,8 +33,10 @@ tar -xzf praxity-cli-0.3.0-macos-arm64.tar.gz
 export PRAXITY_CLI="$PWD/studio-cli/praxity.mjs"
 ```
 
-Studio publishes the CLI for macOS only, so `--verify` does not support
+The Studio 0.3.0 CLI archives are for macOS only, so `--verify` does not support
 Windows yet. Importing without `--verify` works on any platform.
+
+## Project guides
 
 - Agents and scripts: [skill/SKILL.md](skill/SKILL.md) documents the CLI
   contract and how to review an import.
